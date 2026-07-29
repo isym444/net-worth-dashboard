@@ -4,7 +4,7 @@ services:
     runtime: docker
     rootDir: net-worth-service
     dockerfilePath: ./Dockerfile
-    plan: free
+    plan: starter
     healthCheckPath: /actuator/health
     envVars:
       - key: DATABASE_URL
