@@ -29,7 +29,7 @@ All configuration happens on the `JFreeChart`/`XYPlot` objects already returned 
 | Axis line/ticks | `#232838` | `--border` |
 | Axis label text | `#8b92a3` | `--text-muted` |
 | Chart title text | `#e8eaed` | `--text` |
-| Legend background | transparent | — |
+| Legend background | `#12161f` | `--surface` |
 | Legend text | `#8b92a3` | `--text-muted` |
 | Net worth series | `#34d399` | `--accent` |
 | Trading212 series | `#60a5fa` | (new, chart-only) |
