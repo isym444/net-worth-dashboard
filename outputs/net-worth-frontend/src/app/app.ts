@@ -1,11 +1,14 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { AccessGateComponent } from './access-gate.component';
+import { AuthService } from './auth.service';
+import { DashboardComponent } from './dashboard.component';
 
 @Component({
   selector: 'app-root',
-  imports: [],
+  imports: [AccessGateComponent, DashboardComponent],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('net-worth-frontend');
+  protected readonly authService = inject(AuthService);
 }
