@@ -23,6 +23,8 @@ networth:
   snapshot:
     cron: "${SNAPSHOT_CRON:0 0 7 * * *}"
     zone: "${SNAPSHOT_ZONE:UTC}"
+  cors:
+    frontend-origin: ${FRONTEND_ORIGIN:http://localhost:4200}
   trading212:
     env: ${TRADING212_ENV:live}
     isa:
