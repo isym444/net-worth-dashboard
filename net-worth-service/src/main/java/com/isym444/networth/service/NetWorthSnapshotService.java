@@ -124,8 +124,11 @@ public class NetWorthSnapshotService {
      * values were most recently saved for this currency, rather than resetting them.
      */
     private double[] carryForwardManualTotals(String currency) {
-        return repository.findFirstByCurrencyOrderByTimestampDesc(currency)
-                .map(previous -> new double[] { previous.getPensionTotal(), previous.getBarclaysSharesTotal() })
+        return repository.findFirstByCurrencyOrderByTimestampDescIdDesc(currency)
+                .map(previous -> new double[] {
+                        previous.getPensionTotal() != null ? previous.getPensionTotal() : 0.0,
+                        previous.getBarclaysSharesTotal() != null ? previous.getBarclaysSharesTotal() : 0.0
+                })
                 .orElse(new double[] { 0.0, 0.0 });
     }
 

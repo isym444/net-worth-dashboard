@@ -11,7 +11,7 @@ public interface NetWorthSnapshotRepository extends JpaRepository<NetWorthSnapsh
 
     List<NetWorthSnapshot> findByCurrencyOrderByTimestampAsc(String currency);
 
-    Optional<NetWorthSnapshot> findFirstByCurrencyOrderByTimestampDesc(String currency);
+    Optional<NetWorthSnapshot> findFirstByCurrencyOrderByTimestampDescIdDesc(String currency);
 
     @Query("SELECT DISTINCT s.currency FROM NetWorthSnapshot s ORDER BY s.currency")
     List<String> findDistinctCurrencies();
