@@ -36,6 +36,8 @@ rebuild and redeploy.
 Deployed as a `runtime: static` service from the repo-root `render.yaml`,
 alongside `net-worth-service`, via Blueprint (see `net-worth-service/README.md`
 for the full Blueprint walkthrough). Build command `npm ci && npm run build`,
-publish path `./dist/net-worth-frontend/browser`. No environment variables
-are required on this service — the access key is entered at runtime in the
-browser, not baked into the build.
+publish path `./dist/net-worth-frontend/browser`. `NODE_VERSION` is set to
+`24` for you via `render.yaml` (Angular's build tooling requires a narrow
+Node version range that most platform defaults miss). No other environment
+variables are required on this service — the access key is entered at
+runtime in the browser, not baked into the build.

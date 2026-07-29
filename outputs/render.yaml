@@ -40,6 +40,9 @@ services:
     rootDir: net-worth-frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist/net-worth-frontend/browser
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
 
 databases:
   - name: net-worth-db

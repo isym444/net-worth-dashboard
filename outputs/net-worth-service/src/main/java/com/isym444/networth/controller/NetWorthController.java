@@ -57,6 +57,10 @@ public class NetWorthController {
         return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).body(png);
     }
 
+    // Assumes a single-currency dataset: with no ?currency= param, falls back to
+    // whichever currency sorts first alphabetically among logged snapshots. Fine
+    // for this deployment (single-currency accounts in practice) but if snapshots
+    // ever span multiple currencies, pass ?currency= explicitly to pick one.
     private String resolveCurrency(String requested) {
         if (requested != null && !requested.isBlank()) {
             return requested;

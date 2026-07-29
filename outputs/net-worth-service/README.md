@@ -47,6 +47,10 @@ snapshots will fail with "No API keys configured".
 | `GET /api/v1/chart?currency=GBP` | PNG line chart (Trading212 / Crypto.com / net worth) rendered from the history. |
 | `GET /actuator/health` | Health check (used by Render) |
 
+Note: if snapshots ever span multiple currencies, only one (the alphabetically
+first, or whichever `?currency=` is passed) is shown by default — see
+`resolveCurrency()` in `NetWorthController`.
+
 ## Frontend
 
 A small Angular dashboard lives at `../net-worth-frontend`. It's deployed as its own
@@ -78,14 +82,22 @@ curl http://localhost:8080/api/v1/chart -o chart.png
 
 **Option A — Blueprint (`render.yaml`)**
 
-1. Push this folder to a GitHub repo.
-2. In Render: New → Blueprint, point it at the repo. It provisions the web
-   service (built from the `Dockerfile`) and a free Postgres database, and
-   wires `DATABASE_URL` between them automatically.
-3. In the service's Environment tab, fill in the credential variables
-   marked `sync: false` in `render.yaml` (`TRADING212_API_KEY_ISA`,
+1. Push the repo root (containing `net-worth-service/`, `net-worth-frontend/`,
+   and `render.yaml`) to a GitHub repo.
+2. In Render: New → Blueprint, point it at the repo. It provisions three
+   resources: the backend web service (built from `Dockerfile`), the
+   `net-worth-frontend` static site, and a free Postgres database — wiring
+   `DATABASE_URL` between the backend and Postgres automatically.
+3. In the backend service's Environment tab, fill in the credential
+   variables marked `sync: false` in `render.yaml` (`TRADING212_API_KEY_ISA`,
    `CRYPTO_COM_KEY`, etc.) — Render leaves these blank for you to set
    manually so they're never committed to the repo.
+
+If either service's actual Render-assigned URL ever differs from what's
+hardcoded (`net-worth-frontend/src/environments/environment.prod.ts`'s
+`apiBaseUrl`, and `render.yaml`'s `FRONTEND_ORIGIN` value), both must be
+updated together and redeployed — a mismatch shows up as a CORS/connection
+error in the browser.
 
 **Option B — Manual**
 
