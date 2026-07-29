@@ -10,6 +10,7 @@
   --error: #f87171;
   --error-bg: #2a1414;
   --radius: 10px;
+  color-scheme: dark;
 }
 
 * {
@@ -29,4 +30,11 @@ body {
     'Segoe UI',
     sans-serif;
   line-height: 1.5;
+}
+
+input,
+button,
+select,
+textarea {
+  font: inherit;
 }

@@ -116,6 +116,10 @@ header button:disabled {
 
 .chart-card {
   margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 
 .chart-panel {
@@ -135,7 +139,7 @@ header button:disabled {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 table {
