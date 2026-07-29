@@ -1,0 +1,13 @@
+<div class="gate">
+  <h1>Net Worth Dashboard</h1>
+  <p>Enter your access key to continue.</p>
+  <input
+    type="password"
+    [ngModel]="keyInput()"
+    (ngModelChange)="keyInput.set($event)"
+    (keyup.enter)="unlock()"
+    placeholder="Access key"
+    autofocus
+  />
+  <button (click)="unlock()" [disabled]="keyInput().trim().length === 0">Unlock</button>
+</div>
