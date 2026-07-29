@@ -8,9 +8,7 @@ services:
     healthCheckPath: /actuator/health
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: net-worth-db
-          property: connectionString
+        sync: false
       - key: TRADING212_API_KEY_ISA
         sync: false
       - key: TRADING212_API_SECRET_ISA
@@ -26,7 +24,7 @@ services:
       - key: CRYPTO_COM_SECRET
         sync: false
       - key: SNAPSHOT_CRON
-        value: "0 0 7 * * *"
+        value: "0 * * * * *"
       - key: SNAPSHOT_ZONE
         value: UTC
       - key: DASHBOARD_ACCESS_KEY
