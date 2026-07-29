@@ -29,6 +29,8 @@ services:
       CRYPTO_COM_SECRET: ${CRYPTO_COM_SECRET:-}
       SNAPSHOT_CRON: ${SNAPSHOT_CRON:-0 0 7 * * *}
       SNAPSHOT_ZONE: ${SNAPSHOT_ZONE:-UTC}
+      DASHBOARD_ACCESS_KEY: ${DASHBOARD_ACCESS_KEY:-}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:4200}
 
 volumes:
   pgdata:

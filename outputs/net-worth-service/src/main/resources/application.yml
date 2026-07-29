@@ -1,5 +1,7 @@
 server:
   port: ${PORT:8080}
+  error:
+    include-message: always
 
 spring:
   application:
@@ -25,6 +27,8 @@ networth:
     zone: "${SNAPSHOT_ZONE:UTC}"
   cors:
     frontend-origin: ${FRONTEND_ORIGIN:http://localhost:4200}
+  dashboard:
+    access-key: ${DASHBOARD_ACCESS_KEY:}
   trading212:
     env: ${TRADING212_ENV:live}
     isa:
