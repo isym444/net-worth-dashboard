@@ -23,7 +23,7 @@ export class DashboardComponent implements OnInit {
   });
 
   protected readonly sortedDescending = computed(() =>
-    [...this.snapshots()].sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
+    [...this.snapshots()].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
   );
 
   ngOnInit(): void {
@@ -31,8 +31,10 @@ export class DashboardComponent implements OnInit {
     this.loadChart();
   }
 
-  loadHistory(): void {
-    this.loading.set(true);
+  loadHistory(showLoadingState = true): void {
+    if (showLoadingState) {
+      this.loading.set(true);
+    }
     this.error.set(null);
     this.netWorthService.getHistory().subscribe({
       next: (data) => {
@@ -48,7 +50,7 @@ export class DashboardComponent implements OnInit {
 
   loadChart(): void {
     this.netWorthService.getChartBlob().subscribe({
-      next: (blob) => this.chartUrl.set(URL.createObjectURL(blob)),
+      next: (blob) => this.chartUrl.set(blob && blob.size > 0 ? URL.createObjectURL(blob) : null),
       error: () => this.chartUrl.set(null),
     });
   }
@@ -59,7 +61,7 @@ export class DashboardComponent implements OnInit {
     this.netWorthService.takeSnapshot().subscribe({
       next: () => {
         this.takingSnapshot.set(false);
-        this.loadHistory();
+        this.loadHistory(false);
         this.loadChart();
       },
       error: (err: unknown) => {
