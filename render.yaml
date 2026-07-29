@@ -24,7 +24,7 @@ services:
       - key: CRYPTO_COM_SECRET
         sync: false
       - key: SNAPSHOT_CRON
-        value: "0 * * * * *"
+        value: "0 0 7 * * *"
       - key: SNAPSHOT_ZONE
         value: UTC
       - key: DASHBOARD_ACCESS_KEY
