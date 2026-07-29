@@ -25,6 +25,14 @@
         <span>Crypto.com</span>
         <strong>{{ latestSnapshot.cryptoTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
       </div>
+      <div class="stat-card">
+        <span>Pension</span>
+        <strong>{{ latestSnapshot.pensionTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
+      <div class="stat-card">
+        <span>Barclays Shares</span>
+        <strong>{{ latestSnapshot.barclaysSharesTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
       <div class="stat-card stat-card--primary">
         <span>Net worth</span>
         <strong>{{ latestSnapshot.grandTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
@@ -48,6 +56,8 @@
             <th>Date</th>
             <th>Trading212</th>
             <th>Crypto.com</th>
+            <th>Pension</th>
+            <th>Barclays Shares</th>
             <th>Net worth</th>
           </tr>
         </thead>
@@ -57,6 +67,8 @@
               <td>{{ row.timestamp | date: 'medium' }}</td>
               <td>{{ row.t212Total | number: '1.2-2' }}</td>
               <td>{{ row.cryptoTotal | number: '1.2-2' }}</td>
+              <td>{{ row.pensionTotal | number: '1.2-2' }}</td>
+              <td>{{ row.barclaysSharesTotal | number: '1.2-2' }}</td>
               <td>{{ row.grandTotal | number: '1.2-2' }}</td>
             </tr>
           }

@@ -9,6 +9,8 @@ export interface NetWorthSnapshot {
   currency: string;
   t212Total: number;
   cryptoTotal: number;
+  pensionTotal: number;
+  barclaysSharesTotal: number;
   grandTotal: number;
 }
 
