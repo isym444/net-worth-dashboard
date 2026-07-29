@@ -1,59 +1,41 @@
-# NetWorthFrontend
+# net-worth-frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.8.
+Single-page Angular dashboard for `net-worth-service`: current net worth, a
+"Take snapshot now" button, a history table, and the net worth chart. Gated
+behind a shared access key (see `DASHBOARD_ACCESS_KEY` on the backend) —
+enter it once per page load, held in memory only.
 
-## Development server
+## Requirements
 
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Node 24 (Angular 22 requires `^22.22.3 || ^24.15.0 || >=26.0.0`). If your
+system's default `node` doesn't satisfy that, install a matching version
+without disturbing the default, e.g.:
 
 ```bash
-ng generate component component-name
+brew install node@24
+export PATH="/opt/homebrew/opt/node@24/bin:$PATH"
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Run locally
+
+Requires the backend running locally too (see `../net-worth-service/README.md`,
+`docker compose up --build`, default `http://localhost:8080`):
 
 ```bash
-ng generate --help
+npm ci
+npm start   # ng serve, http://localhost:4200
 ```
 
-## Building
+`src/environments/environment.ts` points at `http://localhost:8080` for dev.
+`src/environments/environment.prod.ts` (used by `npm run build`) points at
+the deployed backend's Render URL — update it if that URL ever changes, then
+rebuild and redeploy.
 
-To build the project run:
+## Deploy to Render
 
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Deployed as a `runtime: static` service from the repo-root `render.yaml`,
+alongside `net-worth-service`, via Blueprint (see `net-worth-service/README.md`
+for the full Blueprint walkthrough). Build command `npm ci && npm run build`,
+publish path `./dist/net-worth-frontend/browser`. No environment variables
+are required on this service — the access key is entered at runtime in the
+browser, not baked into the build.

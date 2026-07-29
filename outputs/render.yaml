@@ -29,6 +29,17 @@ services:
         value: "0 0 7 * * *"
       - key: SNAPSHOT_ZONE
         value: UTC
+      - key: DASHBOARD_ACCESS_KEY
+        sync: false
+      - key: FRONTEND_ORIGIN
+        value: https://net-worth-frontend.onrender.com
+
+  - type: web
+    name: net-worth-frontend
+    runtime: static
+    rootDir: net-worth-frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist/net-worth-frontend/browser
 
 databases:
   - name: net-worth-db

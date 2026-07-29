@@ -31,6 +31,8 @@ data point.
 | `SNAPSHOT_CRON` | no | Cron expression (6-field, Spring format: sec min hour day month weekday) for the daily job. Default `0 0 7 * * *` (07:00) |
 | `SNAPSHOT_ZONE` | no | Timezone for `SNAPSHOT_CRON`. Default `UTC` |
 | `PORT` | no | Listen port. Render sets this automatically |
+| `DASHBOARD_ACCESS_KEY` | no | Shared secret required in the `X-Api-Key` header on every `/api/**` request. Leave unset to disable auth entirely (e.g. local dev). |
+| `FRONTEND_ORIGIN` | no | Origin(s) allowed to call the API via CORS (comma-separated). Default `http://localhost:4200` for local `ng serve`. |
 
 Every credential is optional in isolation — leave a pair blank to skip that
 source. At least one Trading212 account or Crypto.com must be configured or
@@ -44,6 +46,13 @@ snapshots will fail with "No API keys configured".
 | `GET /api/v1/history?currency=GBP` | Full snapshot history for a currency, oldest first. `currency` defaults to whichever currency has been logged. |
 | `GET /api/v1/chart?currency=GBP` | PNG line chart (Trading212 / Crypto.com / net worth) rendered from the history. |
 | `GET /actuator/health` | Health check (used by Render) |
+
+## Frontend
+
+A small Angular dashboard lives at `../net-worth-frontend`. It's deployed as its own
+Render static site (see the repo-root `render.yaml`) and talks to this API directly
+from the browser, so both `DASHBOARD_ACCESS_KEY` and `FRONTEND_ORIGIN` matter once
+it's live — see `net-worth-frontend/README.md`.
 
 ## Run locally
 
