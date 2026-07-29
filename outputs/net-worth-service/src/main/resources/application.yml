@@ -1,0 +1,45 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: net-worth-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/networth}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+
+# Trading212/Crypto.com credentials and the snapshot schedule. Leave any
+# key/secret pair blank to skip that source entirely.
+networth:
+  snapshot:
+    cron: "${SNAPSHOT_CRON:0 0 7 * * *}"
+    zone: "${SNAPSHOT_ZONE:UTC}"
+  trading212:
+    env: ${TRADING212_ENV:live}
+    isa:
+      api-key: ${TRADING212_API_KEY_ISA:}
+      api-secret: ${TRADING212_API_SECRET_ISA:}
+    invest:
+      api-key: ${TRADING212_API_KEY_INVEST:}
+      api-secret: ${TRADING212_API_SECRET_INVEST:}
+  cryptocom:
+    api-key: ${CRYPTO_COM_KEY:}
+    api-secret: ${CRYPTO_COM_SECRET:}
+
+management:
+  endpoint:
+    health:
+      show-details: never
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -1,0 +1,6 @@
+.env
+.claude/
+.audit-key
+audit.jsonl
+.DS_Store
+__pycache__/

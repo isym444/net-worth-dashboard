@@ -1,0 +1,82 @@
+package com.isym444.networth.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+import java.time.Instant;
+
+@Entity
+@Table(name = "snapshots")
+public class NetWorthSnapshot {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private Instant timestamp;
+
+    @Column(nullable = false)
+    private String currency;
+
+    @Column(name = "t212_total", nullable = false)
+    private Double t212Total;
+
+    @Column(name = "crypto_total", nullable = false)
+    private Double cryptoTotal;
+
+    @Column(name = "grand_total", nullable = false)
+    private Double grandTotal;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Instant timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public Double getT212Total() {
+        return t212Total;
+    }
+
+    public void setT212Total(Double t212Total) {
+        this.t212Total = t212Total;
+    }
+
+    public Double getCryptoTotal() {
+        return cryptoTotal;
+    }
+
+    public void setCryptoTotal(Double cryptoTotal) {
+        this.cryptoTotal = cryptoTotal;
+    }
+
+    public Double getGrandTotal() {
+        return grandTotal;
+    }
+
+    public void setGrandTotal(Double grandTotal) {
+        this.grandTotal = grandTotal;
+    }
+}
