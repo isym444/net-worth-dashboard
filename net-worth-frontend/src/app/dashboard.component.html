@@ -1,6 +1,9 @@
 <header>
   <h1>Net Worth Dashboard</h1>
   <button (click)="takeSnapshot()" [disabled]="takingSnapshot()">
+    @if (takingSnapshot()) {
+      <span class="spinner"></span>
+    }
     {{ takingSnapshot() ? 'Taking snapshot…' : 'Take snapshot now' }}
   </button>
 </header>
@@ -10,42 +13,57 @@
 }
 
 @if (loading()) {
-  <p>Loading…</p>
+  <p class="muted">Loading…</p>
 } @else {
   @if (latest(); as latestSnapshot) {
     <section class="headline">
-      <div><span>Trading212</span><strong>{{ latestSnapshot.t212Total | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong></div>
-      <div><span>Crypto.com</span><strong>{{ latestSnapshot.cryptoTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong></div>
-      <div><span>Net worth</span><strong>{{ latestSnapshot.grandTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong></div>
+      <div class="stat-card">
+        <span>Trading212</span>
+        <strong>{{ latestSnapshot.t212Total | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
+      <div class="stat-card">
+        <span>Crypto.com</span>
+        <strong>{{ latestSnapshot.cryptoTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
+      <div class="stat-card stat-card--primary">
+        <span>Net worth</span>
+        <strong>{{ latestSnapshot.grandTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
     </section>
   } @else {
-    <p>No snapshots yet. Click "Take snapshot now" to get started.</p>
+    <p class="muted">No snapshots yet. Click "Take snapshot now" to get started.</p>
   }
 
   @if (chartUrl(); as url) {
-    <img [src]="url" alt="Net worth over time" class="chart" />
+    <section class="chart-card">
+      <div class="chart-panel">
+        <img [src]="url" alt="Net worth over time" class="chart" />
+      </div>
+    </section>
   }
 
   @if (sortedDescending().length > 0) {
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Trading212</th>
-          <th>Crypto.com</th>
-          <th>Net worth</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (row of sortedDescending(); track row.id) {
+    <section class="table-card">
+      <table>
+        <thead>
           <tr>
-            <td>{{ row.timestamp | date: 'medium' }}</td>
-            <td>{{ row.t212Total | number: '1.2-2' }}</td>
-            <td>{{ row.cryptoTotal | number: '1.2-2' }}</td>
-            <td>{{ row.grandTotal | number: '1.2-2' }}</td>
+            <th>Date</th>
+            <th>Trading212</th>
+            <th>Crypto.com</th>
+            <th>Net worth</th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (row of sortedDescending(); track row.id) {
+            <tr>
+              <td>{{ row.timestamp | date: 'medium' }}</td>
+              <td>{{ row.t212Total | number: '1.2-2' }}</td>
+              <td>{{ row.cryptoTotal | number: '1.2-2' }}</td>
+              <td>{{ row.grandTotal | number: '1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
   }
 }
