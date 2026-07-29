@@ -29,6 +29,12 @@ public class NetWorthSnapshot {
     @Column(name = "crypto_total", nullable = false)
     private Double cryptoTotal;
 
+    @Column(name = "pension_total", nullable = false)
+    private Double pensionTotal;
+
+    @Column(name = "barclays_shares_total", nullable = false)
+    private Double barclaysSharesTotal;
+
     @Column(name = "grand_total", nullable = false)
     private Double grandTotal;
 
@@ -70,6 +76,22 @@ public class NetWorthSnapshot {
 
     public void setCryptoTotal(Double cryptoTotal) {
         this.cryptoTotal = cryptoTotal;
+    }
+
+    public Double getPensionTotal() {
+        return pensionTotal;
+    }
+
+    public void setPensionTotal(Double pensionTotal) {
+        this.pensionTotal = pensionTotal;
+    }
+
+    public Double getBarclaysSharesTotal() {
+        return barclaysSharesTotal;
+    }
+
+    public void setBarclaysSharesTotal(Double barclaysSharesTotal) {
+        this.barclaysSharesTotal = barclaysSharesTotal;
     }
 
     public Double getGrandTotal() {

@@ -94,20 +94,39 @@ public class NetWorthSnapshotService {
         Instant now = Instant.now();
         List<NetWorthSnapshot> rows = new ArrayList<>();
         for (Map.Entry<String, double[]> entry : totalsByCurrency.entrySet()) {
+            String currency = entry.getKey();
             double t212Total = entry.getValue()[0];
             double cryptoTotal = entry.getValue()[1];
 
+            double[] carriedForward = carryForwardManualTotals(currency);
+            double pensionTotal = carriedForward[0];
+            double barclaysSharesTotal = carriedForward[1];
+
             NetWorthSnapshot snapshot = new NetWorthSnapshot();
             snapshot.setTimestamp(now);
-            snapshot.setCurrency(entry.getKey());
+            snapshot.setCurrency(currency);
             snapshot.setT212Total(round2(t212Total));
             snapshot.setCryptoTotal(round2(cryptoTotal));
-            snapshot.setGrandTotal(round2(t212Total + cryptoTotal));
+            snapshot.setPensionTotal(round2(pensionTotal));
+            snapshot.setBarclaysSharesTotal(round2(barclaysSharesTotal));
+            snapshot.setGrandTotal(round2(t212Total + cryptoTotal + pensionTotal + barclaysSharesTotal));
             rows.add(repository.save(snapshot));
-            log.info("Saved snapshot: currency={} t212Total={} cryptoTotal={} grandTotal={}",
-                    snapshot.getCurrency(), snapshot.getT212Total(), snapshot.getCryptoTotal(), snapshot.getGrandTotal());
+            log.info("Saved snapshot: currency={} t212Total={} cryptoTotal={} pensionTotal={} barclaysSharesTotal={} grandTotal={}",
+                    snapshot.getCurrency(), snapshot.getT212Total(), snapshot.getCryptoTotal(),
+                    snapshot.getPensionTotal(), snapshot.getBarclaysSharesTotal(), snapshot.getGrandTotal());
         }
         return rows;
+    }
+
+    /**
+     * Pension and Barclays shares aren't fetched from any API — they're maintained
+     * by hand directly in the database. Each new snapshot carries forward whichever
+     * values were most recently saved for this currency, rather than resetting them.
+     */
+    private double[] carryForwardManualTotals(String currency) {
+        return repository.findFirstByCurrencyOrderByTimestampDesc(currency)
+                .map(previous -> new double[] { previous.getPensionTotal(), previous.getBarclaysSharesTotal() })
+                .orElse(new double[] { 0.0, 0.0 });
     }
 
     private void addTrading212Account(Map<String, double[]> totalsByCurrency, String baseUrl, String label,
