@@ -1,0 +1,57 @@
+:host {
+  display: block;
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: system-ui, sans-serif;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.error {
+  color: #b00020;
+  font-weight: bold;
+}
+
+.headline {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.headline div {
+  display: flex;
+  flex-direction: column;
+}
+
+.headline strong {
+  font-size: 1.25rem;
+}
+
+.chart {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1.5rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: right;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid #ddd;
+}
+
+th:first-child,
+td:first-child {
+  text-align: left;
+}
