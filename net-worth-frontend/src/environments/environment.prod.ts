@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://net-worth-service.onrender.com',
+  apiBaseUrl: 'https://net-worth-service-nt7d.onrender.com',
 };

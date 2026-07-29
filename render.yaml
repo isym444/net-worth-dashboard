@@ -32,17 +32,19 @@ services:
       - key: DASHBOARD_ACCESS_KEY
         sync: false
       - key: FRONTEND_ORIGIN
-        value: https://net-worth-frontend.onrender.com
+        value: https://net-worth-frontend-nt7d.onrender.com
 
   - type: web
     name: net-worth-frontend
     runtime: static
     rootDir: net-worth-frontend
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci && node scripts/set-env.js && npm run build
     staticPublishPath: ./dist/net-worth-frontend/browser
     envVars:
       - key: NODE_VERSION
         value: "24"
+      - key: API_BASE_URL
+        value: https://net-worth-service-nt7d.onrender.com
 
 databases:
   - name: net-worth-db
