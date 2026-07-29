@@ -122,12 +122,6 @@ header button:disabled {
   border-radius: var(--radius);
 }
 
-.chart-panel {
-  padding: 1rem;
-  background: #f4f5f7;
-  border-radius: var(--radius);
-}
-
 .chart {
   display: block;
   max-width: 100%;
