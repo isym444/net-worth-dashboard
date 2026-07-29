@@ -4,4 +4,3 @@ target/
 .dockerignore
 *.md
 docker-compose.yml
-render.yaml
