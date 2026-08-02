@@ -18,10 +18,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Fetches balances from every configured source (Trading212 ISA, Trading212
- * Invest, Crypto.com) and persists one row per currency observed. Neither
- * upstream API exposes historical portfolio value, so this service is the
- * only place history gets built up — one snapshot at a time.
+ * Fetches balances from every source (Trading212 ISA, Trading212 Invest,
+ * Crypto.com) and persists one row per currency observed. Neither upstream
+ * API exposes historical portfolio value, so this service is the only place
+ * history gets built up — one snapshot at a time.
+ *
+ * <p>All three sources are required: a missing credential or a failed API
+ * call aborts the whole snapshot (nothing is saved) rather than silently
+ * persisting a partial total. This is deliberate — a silently-partial total
+ * once produced a real, wrong row in the history that went unnoticed for
+ * hours because nothing distinguished it from a normal snapshot.
  */
 @Service
 public class NetWorthSnapshotService {
@@ -85,12 +91,6 @@ public class NetWorthSnapshotService {
         addTrading212Account(totalsByCurrency, baseUrl, "Invest", investApiKey, investApiSecret);
         addCryptoCom(totalsByCurrency);
 
-        if (totalsByCurrency.isEmpty()) {
-            throw new IllegalStateException(
-                    "No API keys configured. Set TRADING212_API_KEY_ISA / TRADING212_API_KEY_INVEST "
-                            + "and/or CRYPTO_COM_KEY + CRYPTO_COM_SECRET.");
-        }
-
         Instant now = Instant.now();
         List<NetWorthSnapshot> rows = new ArrayList<>();
         for (Map.Entry<String, double[]> entry : totalsByCurrency.entrySet()) {
@@ -98,9 +98,12 @@ public class NetWorthSnapshotService {
             double t212Total = entry.getValue()[0];
             double cryptoTotal = entry.getValue()[1];
 
-            double[] carriedForward = carryForwardManualTotals(currency);
-            double pensionTotal = carriedForward[0];
-            double barclaysSharesTotal = carriedForward[1];
+            NetWorthSnapshot previous = repository.findFirstByCurrencyOrderByTimestampDescIdDesc(currency)
+                    .orElse(null);
+            double pensionTotal = previous != null && previous.getPensionTotal() != null
+                    ? previous.getPensionTotal() : 0.0;
+            double barclaysSharesTotal = previous != null && previous.getBarclaysSharesTotal() != null
+                    ? previous.getBarclaysSharesTotal() : 0.0;
 
             NetWorthSnapshot snapshot = new NetWorthSnapshot();
             snapshot.setTimestamp(now);
@@ -118,25 +121,14 @@ public class NetWorthSnapshotService {
         return rows;
     }
 
-    /**
-     * Pension and Barclays shares aren't fetched from any API — they're maintained
-     * by hand directly in the database. Each new snapshot carries forward whichever
-     * values were most recently saved for this currency, rather than resetting them.
-     */
-    private double[] carryForwardManualTotals(String currency) {
-        return repository.findFirstByCurrencyOrderByTimestampDescIdDesc(currency)
-                .map(previous -> new double[] {
-                        previous.getPensionTotal() != null ? previous.getPensionTotal() : 0.0,
-                        previous.getBarclaysSharesTotal() != null ? previous.getBarclaysSharesTotal() : 0.0
-                })
-                .orElse(new double[] { 0.0, 0.0 });
-    }
-
     private void addTrading212Account(Map<String, double[]> totalsByCurrency, String baseUrl, String label,
                                        String apiKey, String apiSecret) {
-        if (apiKey == null || apiKey.isBlank()) {
-            log.info("Trading212 {} account skipped (no API key configured)", label);
-            return;
+        if (apiKey == null || apiKey.isBlank() || apiSecret == null || apiSecret.isBlank()) {
+            log.warn("Trading212 {} account is not configured (missing API key/secret)", label);
+            throw new IllegalStateException(
+                    "Trading212 " + label + " account is not configured (missing API key/secret) — "
+                            + "refusing to save a snapshot with a partial total. Set TRADING212_API_KEY_"
+                            + label.toUpperCase() + " / TRADING212_API_SECRET_" + label.toUpperCase() + ".");
         }
         log.info("Fetching Trading212 {} account summary from {}", label, baseUrl);
         JsonNode summary = trading212Client.fetchAccountSummary(baseUrl, apiKey, apiSecret);
@@ -157,8 +149,10 @@ public class NetWorthSnapshotService {
     private void addCryptoCom(Map<String, double[]> totalsByCurrency) {
         if (cryptoComApiKey == null || cryptoComApiKey.isBlank()
                 || cryptoComApiSecret == null || cryptoComApiSecret.isBlank()) {
-            log.info("Crypto.com skipped (no API key/secret configured)");
-            return;
+            log.warn("Crypto.com is not configured (missing API key/secret)");
+            throw new IllegalStateException(
+                    "Crypto.com is not configured (missing API key/secret) — refusing to save a snapshot "
+                            + "with a partial total. Set CRYPTO_COM_KEY / CRYPTO_COM_SECRET.");
         }
 
         log.info("Fetching Crypto.com fiat + portfolio balances");

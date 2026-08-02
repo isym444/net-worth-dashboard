@@ -19,8 +19,10 @@ spring:
       hibernate:
         format_sql: false
 
-# Trading212/Crypto.com credentials and the snapshot schedule. Leave any
-# key/secret pair blank to skip that source entirely.
+# Trading212/Crypto.com credentials and the snapshot schedule. All three
+# key/secret pairs (ISA, Invest, Crypto.com) are required — a snapshot
+# aborts and saves nothing if any one of them is missing or its API call
+# fails, rather than silently persisting a partial total.
 networth:
   snapshot:
     cron: "${SNAPSHOT_CRON:0 0 7 * * *}"
