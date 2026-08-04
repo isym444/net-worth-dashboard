@@ -13,11 +13,24 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
+      # Spring Boot's default physical naming strategy (SpringPhysicalNamingStrategy)
+      # lowercases identifier text unconditionally, even for @Column(name = "`...`")
+      # values that are explicitly backtick-quoted — the backticks still make it
+      # *quote* the SQL, just with the wrong (lowercased) case, which breaks lookups
+      # against genuinely mixed-case Postgres columns like "grand_total_EUR". Vanilla
+      # Hibernate's own strategy passes explicit names through unchanged.
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
       ddl-auto: update
     open-in-view: false
     properties:
       hibernate:
         format_sql: false
+        # Global quoting treats every identifier as already quoted, so the (now
+        # case-preserving) physical naming strategy's output is emitted verbatim in
+        # generated SQL. Safe for the existing already-lowercase columns
+        # (t212_total, etc.) — quoting a lowercase identifier in Postgres is a no-op.
+        globally_quoted_identifiers: true
 
 # Trading212/Crypto.com credentials and the snapshot schedule. All three
 # key/secret pairs (ISA, Invest, Crypto.com) are required — a snapshot
