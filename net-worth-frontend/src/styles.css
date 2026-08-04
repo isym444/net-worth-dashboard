@@ -10,6 +10,7 @@
   --error: #f87171;
   --error-bg: #2a1414;
   --radius: 10px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   color-scheme: dark;
 }
 

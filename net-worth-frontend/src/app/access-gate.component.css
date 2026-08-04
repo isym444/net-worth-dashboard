@@ -15,6 +15,33 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.6);
+  animation: fade-in-view 250ms var(--ease-out) both;
+}
+
+@keyframes fade-in-view {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate {
+    animation-name: fade-in;
+  }
 }
 
 .gate h1 {
@@ -61,11 +88,15 @@
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, transform 160ms var(--ease-out);
 }
 
 .gate button:hover:not(:disabled) {
   background: var(--accent-hover);
+}
+
+.gate button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .gate button:disabled {
