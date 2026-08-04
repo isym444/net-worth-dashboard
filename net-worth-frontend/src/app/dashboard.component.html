@@ -37,6 +37,46 @@
         <span>Net worth</span>
         <strong>{{ latestSnapshot.grandTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
       </div>
+      <div class="stat-card">
+        <span>Net worth (EUR)</span>
+        <strong>
+          @if (latestSnapshot.grandTotalEur !== null) {
+            {{ latestSnapshot.grandTotalEur | number: '1.2-2' }} EUR
+          } @else {
+            —
+          }
+        </strong>
+      </div>
+      <div class="stat-card">
+        <span>Net worth (USD)</span>
+        <strong>
+          @if (latestSnapshot.grandTotalUsd !== null) {
+            {{ latestSnapshot.grandTotalUsd | number: '1.2-2' }} USD
+          } @else {
+            —
+          }
+        </strong>
+      </div>
+      <div class="stat-card">
+        <span>Net worth (MXN)</span>
+        <strong>
+          @if (latestSnapshot.grandTotalMxn !== null) {
+            {{ latestSnapshot.grandTotalMxn | number: '1.2-2' }} MXN
+          } @else {
+            —
+          }
+        </strong>
+      </div>
+      <div class="stat-card">
+        <span>Net worth (JPY)</span>
+        <strong>
+          @if (latestSnapshot.grandTotalJpy !== null) {
+            {{ latestSnapshot.grandTotalJpy | number: '1.2-2' }} JPY
+          } @else {
+            —
+          }
+        </strong>
+      </div>
     </section>
   } @else {
     <p class="muted">No snapshots yet. Click "Take snapshot now" to get started.</p>

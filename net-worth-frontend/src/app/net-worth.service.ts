@@ -12,6 +12,10 @@ export interface NetWorthSnapshot {
   pensionTotal: number;
   barclaysSharesTotal: number;
   grandTotal: number;
+  grandTotalEur: number | null;
+  grandTotalUsd: number | null;
+  grandTotalMxn: number | null;
+  grandTotalJpy: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
