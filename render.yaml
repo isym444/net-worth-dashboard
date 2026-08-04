@@ -29,6 +29,8 @@ services:
         value: UTC
       - key: DASHBOARD_ACCESS_KEY
         sync: false
+      - key: EXCHANGE_RATE_API_KEY
+        sync: false
       - key: FRONTEND_ORIGIN
         value: https://net-worth-frontend-nt7d.onrender.com
 

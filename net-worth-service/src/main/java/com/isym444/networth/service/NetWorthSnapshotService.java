@@ -2,6 +2,7 @@ package com.isym444.networth.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.isym444.networth.client.CryptoComClient;
+import com.isym444.networth.client.ExchangeRateClient;
 import com.isym444.networth.client.Trading212Client;
 import com.isym444.networth.model.NetWorthSnapshot;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
@@ -34,8 +35,11 @@ public class NetWorthSnapshotService {
 
     private static final Logger log = LoggerFactory.getLogger(NetWorthSnapshotService.class);
 
+    private static final String CONVERSION_TARGET_CURRENCIES = "EUR,USD,MXN,JPY";
+
     private final Trading212Client trading212Client;
     private final CryptoComClient cryptoComClient;
+    private final ExchangeRateClient exchangeRateClient;
     private final NetWorthSnapshotRepository repository;
 
     @Value("${networth.trading212.env}")
@@ -59,11 +63,16 @@ public class NetWorthSnapshotService {
     @Value("${networth.cryptocom.api-secret}")
     private String cryptoComApiSecret;
 
+    @Value("${networth.exchange-rate.api-key}")
+    private String exchangeRateApiKey;
+
     public NetWorthSnapshotService(Trading212Client trading212Client,
                                     CryptoComClient cryptoComClient,
+                                    ExchangeRateClient exchangeRateClient,
                                     NetWorthSnapshotRepository repository) {
         this.trading212Client = trading212Client;
         this.cryptoComClient = cryptoComClient;
+        this.exchangeRateClient = exchangeRateClient;
         this.repository = repository;
     }
 
@@ -104,6 +113,9 @@ public class NetWorthSnapshotService {
                     ? previous.getPensionTotal() : 0.0;
             double barclaysSharesTotal = previous != null && previous.getBarclaysSharesTotal() != null
                     ? previous.getBarclaysSharesTotal() : 0.0;
+            double grandTotal = round2(t212Total + cryptoTotal + pensionTotal + barclaysSharesTotal);
+
+            CurrencyConversions conversions = fetchCurrencyConversions(currency, grandTotal);
 
             NetWorthSnapshot snapshot = new NetWorthSnapshot();
             snapshot.setTimestamp(now);
@@ -112,7 +124,11 @@ public class NetWorthSnapshotService {
             snapshot.setCryptoTotal(round2(cryptoTotal));
             snapshot.setPensionTotal(round2(pensionTotal));
             snapshot.setBarclaysSharesTotal(round2(barclaysSharesTotal));
-            snapshot.setGrandTotal(round2(t212Total + cryptoTotal + pensionTotal + barclaysSharesTotal));
+            snapshot.setGrandTotal(grandTotal);
+            snapshot.setGrandTotalEur(conversions.eur());
+            snapshot.setGrandTotalUsd(conversions.usd());
+            snapshot.setGrandTotalMxn(conversions.mxn());
+            snapshot.setGrandTotalJpy(conversions.jpy());
             rows.add(repository.save(snapshot));
             log.info("Saved snapshot: currency={} t212Total={} cryptoTotal={} pensionTotal={} barclaysSharesTotal={} grandTotal={}",
                     snapshot.getCurrency(), snapshot.getT212Total(), snapshot.getCryptoTotal(),
@@ -178,6 +194,43 @@ public class NetWorthSnapshotService {
             totalsByCurrency.computeIfAbsent(currency, c -> new double[2])[1] += amount;
         }
         log.info("Crypto.com balances fetched");
+    }
+
+    /**
+     * Converts a snapshot's grand total into EUR/USD/MXN/JPY via a live exchange-rate
+     * call. Deliberately never throws: a failure here (network error, API error, or a
+     * blank API key) leaves all four conversions null and logs a warning, rather than
+     * blocking the snapshot's core data from saving — unlike the Trading212/Crypto.com
+     * calls above, these conversions are auxiliary, not core to grand_total or the chart.
+     */
+    private CurrencyConversions fetchCurrencyConversions(String baseCurrency, double grandTotal) {
+        if (exchangeRateApiKey == null || exchangeRateApiKey.isBlank()) {
+            log.warn("Exchange rate conversion skipped (no API key configured)");
+            return CurrencyConversions.EMPTY;
+        }
+        try {
+            JsonNode response = exchangeRateClient.fetchRates(baseCurrency, CONVERSION_TARGET_CURRENCIES, exchangeRateApiKey);
+            JsonNode rates = response.path("rates");
+            return new CurrencyConversions(
+                    convert(rates, "EUR", grandTotal),
+                    convert(rates, "USD", grandTotal),
+                    convert(rates, "MXN", grandTotal),
+                    convert(rates, "JPY", grandTotal));
+        } catch (Exception e) {
+            log.warn("Exchange rate conversion failed for currency={}, leaving converted totals null", baseCurrency, e);
+            return CurrencyConversions.EMPTY;
+        }
+    }
+
+    private Double convert(JsonNode rates, String code, double grandTotal) {
+        if (!rates.has(code)) {
+            return null;
+        }
+        return round2(grandTotal * rates.path(code).asDouble());
+    }
+
+    private record CurrencyConversions(Double eur, Double usd, Double mxn, Double jpy) {
+        static final CurrencyConversions EMPTY = new CurrencyConversions(null, null, null, null);
     }
 
     private double round2(double value) {

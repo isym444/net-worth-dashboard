@@ -38,6 +38,18 @@ public class NetWorthSnapshot {
     @Column(name = "grand_total", nullable = false)
     private Double grandTotal;
 
+    @Column(name = "`grand_total_EUR`")
+    private Double grandTotalEur;
+
+    @Column(name = "`grand_total_USD`")
+    private Double grandTotalUsd;
+
+    @Column(name = "`grand_total_MXN`")
+    private Double grandTotalMxn;
+
+    @Column(name = "`grand_total_JPY`")
+    private Double grandTotalJpy;
+
     public Long getId() {
         return id;
     }
@@ -100,5 +112,37 @@ public class NetWorthSnapshot {
 
     public void setGrandTotal(Double grandTotal) {
         this.grandTotal = grandTotal;
+    }
+
+    public Double getGrandTotalEur() {
+        return grandTotalEur;
+    }
+
+    public void setGrandTotalEur(Double grandTotalEur) {
+        this.grandTotalEur = grandTotalEur;
+    }
+
+    public Double getGrandTotalUsd() {
+        return grandTotalUsd;
+    }
+
+    public void setGrandTotalUsd(Double grandTotalUsd) {
+        this.grandTotalUsd = grandTotalUsd;
+    }
+
+    public Double getGrandTotalMxn() {
+        return grandTotalMxn;
+    }
+
+    public void setGrandTotalMxn(Double grandTotalMxn) {
+        this.grandTotalMxn = grandTotalMxn;
+    }
+
+    public Double getGrandTotalJpy() {
+        return grandTotalJpy;
+    }
+
+    public void setGrandTotalJpy(Double grandTotalJpy) {
+        this.grandTotalJpy = grandTotalJpy;
     }
 }

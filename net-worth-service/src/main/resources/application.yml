@@ -42,6 +42,8 @@ networth:
   cryptocom:
     api-key: ${CRYPTO_COM_KEY:}
     api-secret: ${CRYPTO_COM_SECRET:}
+  exchange-rate:
+    api-key: ${EXCHANGE_RATE_API_KEY:}
 
 management:
   endpoint:
