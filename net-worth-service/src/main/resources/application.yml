@@ -19,6 +19,10 @@ spring:
       # *quote* the SQL, just with the wrong (lowercased) case, which breaks lookups
       # against genuinely mixed-case Postgres columns like "grand_total_EUR". Vanilla
       # Hibernate's own strategy passes explicit names through unchanged.
+      # This also means every @Column in this project must now specify name = ...
+      # explicitly — implicit names are no longer converted to snake_case, and
+      # ddl-auto: update would silently create a wrongly-cased column instead of
+      # erroring.
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
       ddl-auto: update

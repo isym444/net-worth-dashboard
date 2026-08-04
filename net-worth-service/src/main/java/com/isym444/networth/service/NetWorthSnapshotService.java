@@ -223,10 +223,12 @@ public class NetWorthSnapshotService {
     }
 
     private Double convert(JsonNode rates, String code, double grandTotal) {
-        if (!rates.has(code)) {
+        JsonNode rate = rates.path(code);
+        if (!rate.isNumber() || rate.asDouble() <= 0) {
+            log.warn("Exchange rate response missing usable rate for {}", code);
             return null;
         }
-        return round2(grandTotal * rates.path(code).asDouble());
+        return round2(grandTotal * rate.asDouble());
     }
 
     private record CurrencyConversions(Double eur, Double usd, Double mxn, Double jpy) {
