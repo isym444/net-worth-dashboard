@@ -1,8 +1,10 @@
 package com.isym444.networth.controller;
 
+import com.isym444.networth.dto.NetWorthHistoryResponse;
 import com.isym444.networth.model.NetWorthSnapshot;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
 import com.isym444.networth.service.ChartService;
+import com.isym444.networth.service.NetWorthHistoryService;
 import com.isym444.networth.service.NetWorthSnapshotService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,13 +22,16 @@ import java.util.List;
 public class NetWorthController {
 
     private final NetWorthSnapshotService snapshotService;
+    private final NetWorthHistoryService historyService;
     private final NetWorthSnapshotRepository repository;
     private final ChartService chartService;
 
     public NetWorthController(NetWorthSnapshotService snapshotService,
+                               NetWorthHistoryService historyService,
                                NetWorthSnapshotRepository repository,
                                ChartService chartService) {
         this.snapshotService = snapshotService;
+        this.historyService = historyService;
         this.repository = repository;
         this.chartService = chartService;
     }
@@ -38,12 +43,8 @@ public class NetWorthController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<NetWorthSnapshot>> history(@RequestParam(required = false) String currency) {
-        String resolved = resolveCurrency(currency);
-        if (resolved == null) {
-            return ResponseEntity.ok(List.of());
-        }
-        return ResponseEntity.ok(repository.findByCurrencyOrderByTimestampAsc(resolved));
+    public ResponseEntity<NetWorthHistoryResponse> history(@RequestParam(required = false) String currency) {
+        return ResponseEntity.ok(historyService.getHistory(currency));
     }
 
     @GetMapping(value = "/chart", produces = MediaType.IMAGE_PNG_VALUE)
