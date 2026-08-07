@@ -1,11 +1,14 @@
 package com.isym444.networth.service;
 
+import com.isym444.networth.dto.NetWorthHistoryResponse;
+import com.isym444.networth.model.NetWorthSnapshot;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 /**
  * Read-side service for /history: fetches persisted snapshots and derives
@@ -26,6 +29,38 @@ public class NetWorthHistoryService {
     public NetWorthHistoryService(NetWorthSnapshotRepository repository, Clock clock) {
         this.repository = repository;
         this.clock = clock;
+    }
+
+    public NetWorthHistoryResponse getHistory(String currency) {
+        String resolved = resolveCurrency(currency);
+        if (resolved == null) {
+            return new NetWorthHistoryResponse(List.of(), null, null, null, null);
+        }
+
+        List<NetWorthSnapshot> snapshots = repository.findByCurrencyOrderByTimestampAsc(resolved);
+        if (snapshots.isEmpty()) {
+            return new NetWorthHistoryResponse(List.of(), null, null, null, null);
+        }
+
+        double baseline = snapshots.get(snapshots.size() - 1).getGrandTotal();
+        LocalDate now = LocalDate.now(clock);
+        return new NetWorthHistoryResponse(
+                snapshots,
+                projectedValue(baseline, yearsRemaining(now, 40)),
+                projectedValue(baseline, yearsRemaining(now, 50)),
+                projectedValue(baseline, yearsRemaining(now, 60)),
+                projectedValue(baseline, yearsRemaining(now, 65)));
+    }
+
+    // Assumes a single-currency dataset: with no ?currency= param, falls back to
+    // whichever currency sorts first alphabetically among logged snapshots. Same
+    // fallback NetWorthController.resolveCurrency uses for /chart.
+    private String resolveCurrency(String requested) {
+        if (requested != null && !requested.isBlank()) {
+            return requested;
+        }
+        List<String> currencies = repository.findDistinctCurrencies();
+        return currencies.isEmpty() ? null : currencies.get(0);
     }
 
     double yearsRemaining(LocalDate now, int targetAge) {
