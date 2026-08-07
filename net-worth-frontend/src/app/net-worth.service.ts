@@ -18,16 +18,24 @@ export interface NetWorthSnapshot {
   grandTotalJpy: number | null;
 }
 
+export interface NetWorthHistoryResponse {
+  snapshots: NetWorthSnapshot[];
+  expectedNetWorthAt40: number | null;
+  expectedNetWorthAt50: number | null;
+  expectedNetWorthAt60: number | null;
+  expectedNetWorthAt65: number | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class NetWorthService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiBaseUrl;
 
-  getHistory(currency?: string): Observable<NetWorthSnapshot[]> {
+  getHistory(currency?: string): Observable<NetWorthHistoryResponse> {
     const url = currency
       ? `${this.baseUrl}/api/v1/history?currency=${encodeURIComponent(currency)}`
       : `${this.baseUrl}/api/v1/history`;
-    return this.http.get<NetWorthSnapshot[]>(url);
+    return this.http.get<NetWorthHistoryResponse>(url);
   }
 
   takeSnapshot(): Observable<NetWorthSnapshot[]> {
