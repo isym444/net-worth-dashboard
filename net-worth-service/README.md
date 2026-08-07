@@ -43,13 +43,30 @@ snapshots will fail with "No API keys configured".
 | Endpoint | Description |
 |---|---|
 | `POST /api/v1/snapshot` | Fetch balances right now and save a row (same logic the cron job runs). Returns the saved row(s) as JSON. |
-| `GET /api/v1/history?currency=GBP` | Full snapshot history for a currency, oldest first. `currency` defaults to whichever currency has been logged. |
+| `GET /api/v1/history?currency=GBP` | Snapshot history for a currency plus projected net worth at a few future ages. `currency` defaults to whichever currency has been logged. See response shape below. |
 | `GET /api/v1/chart?currency=GBP` | PNG line chart (Trading212 / Crypto.com / net worth) rendered from the history. |
 | `GET /actuator/health` | Health check (used by Render) |
 
+`GET /api/v1/history` returns a JSON object, not a bare array:
+
+```json
+{
+  "snapshots": [ /* oldest first — same rows the array used to contain */ ],
+  "expectedNetWorthAt40": 123456.78,
+  "expectedNetWorthAt50": 234567.89,
+  "expectedNetWorthAt60": 345678.90,
+  "expectedNetWorthAt65": 400000.00
+}
+```
+
+The four `expectedNetWorthAt*` fields are a simple compound-interest projection
+of the latest snapshot's grand total (fields are `null` if there's no snapshot
+history yet to project from).
+
 Note: if snapshots ever span multiple currencies, only one (the alphabetically
 first, or whichever `?currency=` is passed) is shown by default — see
-`resolveCurrency()` in `NetWorthController`.
+`resolveCurrency()` in `NetWorthHistoryService` (for `/history`) and the
+identical fallback copied into `NetWorthController` (for `/chart`).
 
 ## Frontend
 
@@ -75,6 +92,7 @@ Then:
 ```bash
 curl -X POST http://localhost:8080/api/v1/snapshot
 curl http://localhost:8080/api/v1/history
+# => {"snapshots": [...], "expectedNetWorthAt40": ..., "expectedNetWorthAt50": ..., "expectedNetWorthAt60": ..., "expectedNetWorthAt65": ...}
 curl http://localhost:8080/api/v1/chart -o chart.png
 ```
 
