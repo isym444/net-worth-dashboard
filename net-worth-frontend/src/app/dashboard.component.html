@@ -77,6 +77,48 @@
           }
         </strong>
       </div>
+      @if (expectedNetWorth(); as proj) {
+        <div class="stat-card">
+          <span>Net worth at 40 (2036)</span>
+          <strong>
+            @if (proj.at40 !== null) {
+              {{ proj.at40 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            } @else {
+              —
+            }
+          </strong>
+        </div>
+        <div class="stat-card">
+          <span>Net worth at 50 (2046)</span>
+          <strong>
+            @if (proj.at50 !== null) {
+              {{ proj.at50 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            } @else {
+              —
+            }
+          </strong>
+        </div>
+        <div class="stat-card">
+          <span>Net worth at 60 (2056)</span>
+          <strong>
+            @if (proj.at60 !== null) {
+              {{ proj.at60 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            } @else {
+              —
+            }
+          </strong>
+        </div>
+        <div class="stat-card">
+          <span>Net worth at 65 (2061)</span>
+          <strong>
+            @if (proj.at65 !== null) {
+              {{ proj.at65 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            } @else {
+              —
+            }
+          </strong>
+        </div>
+      }
     </section>
   } @else {
     <p class="muted">No snapshots yet. Click "Take snapshot now" to get started.</p>

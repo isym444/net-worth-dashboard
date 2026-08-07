@@ -12,6 +12,12 @@ export class DashboardComponent implements OnInit {
   private readonly netWorthService = inject(NetWorthService);
 
   protected readonly snapshots = signal<NetWorthSnapshot[]>([]);
+  protected readonly expectedNetWorth = signal<{
+    at40: number | null;
+    at50: number | null;
+    at60: number | null;
+    at65: number | null;
+  } | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly takingSnapshot = signal(false);
@@ -38,7 +44,13 @@ export class DashboardComponent implements OnInit {
     this.error.set(null);
     this.netWorthService.getHistory().subscribe({
       next: (data) => {
-        this.snapshots.set(data);
+        this.snapshots.set(data.snapshots);
+        this.expectedNetWorth.set({
+          at40: data.expectedNetWorthAt40,
+          at50: data.expectedNetWorthAt50,
+          at60: data.expectedNetWorthAt60,
+          at65: data.expectedNetWorthAt65,
+        });
         this.loading.set(false);
       },
       error: (err: unknown) => {
