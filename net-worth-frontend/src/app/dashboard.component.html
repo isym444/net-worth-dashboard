@@ -42,13 +42,13 @@
         <strong class="negative">{{ latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
       </div>
       <div class="stat-card stat-card--info">
-        <span>Amount Left</span>
+        <span>Remaining for month</span>
         <strong>
           {{ latestSnapshot.chaseTotal - latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}
         </strong>
       </div>
       <div class="stat-card stat-card--info">
-        <span>Daily Spend</span>
+        <span>Mac Daily Spend</span>
         <strong>{{ dailySpend(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
       </div>
       <div class="stat-card stat-card--primary">
