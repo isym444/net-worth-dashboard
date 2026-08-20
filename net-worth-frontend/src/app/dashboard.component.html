@@ -33,6 +33,14 @@
         <span>Barclays Shares</span>
         <strong>{{ latestSnapshot.barclaysSharesTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
       </div>
+      <div class="stat-card">
+        <span>Chase</span>
+        <strong>{{ latestSnapshot.chaseTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
+      <div class="stat-card">
+        <span>Amex Debt</span>
+        <strong>{{ latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
       <div class="stat-card stat-card--primary">
         <span>Net worth</span>
         <strong>{{ latestSnapshot.grandTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
@@ -140,6 +148,8 @@
             <th>Crypto.com</th>
             <th>Pension</th>
             <th>Barclays Shares</th>
+            <th>Chase</th>
+            <th>Amex Debt</th>
             <th>Net worth</th>
           </tr>
         </thead>
@@ -151,6 +161,8 @@
               <td>{{ row.cryptoTotal | number: '1.2-2' }}</td>
               <td>{{ row.pensionTotal | number: '1.2-2' }}</td>
               <td>{{ row.barclaysSharesTotal | number: '1.2-2' }}</td>
+              <td>{{ row.chaseTotal | number: '1.2-2' }}</td>
+              <td>{{ row.amexDebtTotal | number: '1.2-2' }}</td>
               <td>{{ row.grandTotal | number: '1.2-2' }}</td>
             </tr>
           }
