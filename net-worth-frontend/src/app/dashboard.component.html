@@ -17,6 +17,24 @@
 } @else {
   @if (latest(); as latestSnapshot) {
     <section class="headline">
+      <div class="stat-card stat-card--primary">
+        <span>Net worth</span>
+        <strong>{{ latestSnapshot.grandTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
+      <div class="stat-card stat-card--info">
+        <span>Remaining for month</span>
+        <strong>
+          {{ latestSnapshot.chaseTotal - latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}
+        </strong>
+      </div>
+      <div class="stat-card stat-card--info">
+        <span>Max Daily Spend</span>
+        <strong>{{ dailySpend(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
+      <div class="stat-card stat-card--warning">
+        <span>Annual Portfolio Return</span>
+        <strong>{{ latestSnapshot.grandTotal * 0.07 | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
       <div class="stat-card">
         <span>Trading212</span>
         <strong>{{ latestSnapshot.t212Total | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
@@ -40,24 +58,6 @@
       <div class="stat-card">
         <span>Amex Debt</span>
         <strong class="negative">{{ latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card stat-card--info">
-        <span>Remaining for month</span>
-        <strong>
-          {{ latestSnapshot.chaseTotal - latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}
-        </strong>
-      </div>
-      <div class="stat-card stat-card--info">
-        <span>Mac Daily Spend</span>
-        <strong>{{ dailySpend(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card stat-card--primary">
-        <span>Net worth</span>
-        <strong>{{ latestSnapshot.grandTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card stat-card--warning">
-        <span>Annual Return (7%)</span>
-        <strong>{{ latestSnapshot.grandTotal * 0.07 | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
       </div>
       <div class="stat-card">
         <span>Net worth (EUR)</span>
