@@ -35,6 +35,16 @@ public class NetWorthSnapshot {
     @Column(name = "barclays_shares_total", nullable = false)
     private Double barclaysSharesTotal;
 
+    // Nullable, unlike the columns above: added after the table already held
+    // rows, and Postgres can't backfill a NOT NULL column with no default on
+    // an existing table under ddl-auto: update. Every snapshot taken from
+    // here on always sets a real value; only pre-existing history stays null.
+    @Column(name = "chase_total")
+    private Double chaseTotal;
+
+    @Column(name = "amex_total")
+    private Double amexDebtTotal;
+
     @Column(name = "grand_total", nullable = false)
     private Double grandTotal;
 
@@ -104,6 +114,22 @@ public class NetWorthSnapshot {
 
     public void setBarclaysSharesTotal(Double barclaysSharesTotal) {
         this.barclaysSharesTotal = barclaysSharesTotal;
+    }
+
+    public Double getChaseTotal() {
+        return chaseTotal;
+    }
+
+    public void setChaseTotal(Double chaseTotal) {
+        this.chaseTotal = chaseTotal;
+    }
+
+    public Double getAmexDebtTotal() {
+        return amexDebtTotal;
+    }
+
+    public void setAmexDebtTotal(Double amexDebtTotal) {
+        this.amexDebtTotal = amexDebtTotal;
     }
 
     public Double getGrandTotal() {

@@ -23,6 +23,14 @@ services:
         sync: false
       - key: CRYPTO_COM_SECRET
         sync: false
+      - key: YNAB_API_TOKEN
+        sync: false
+      - key: YNAB_BUDGET_ID
+        value: last-used
+      - key: YNAB_CHASE_ACCOUNT_IDS
+        sync: false
+      - key: YNAB_AMEX_ACCOUNT_IDS
+        sync: false
       - key: SNAPSHOT_CRON
         value: "0 0 7 * * *"
       - key: SNAPSHOT_ZONE

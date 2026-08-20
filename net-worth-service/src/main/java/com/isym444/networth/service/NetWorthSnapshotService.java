@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.isym444.networth.client.CryptoComClient;
 import com.isym444.networth.client.ExchangeRateClient;
 import com.isym444.networth.client.Trading212Client;
+import com.isym444.networth.client.YnabClient;
 import com.isym444.networth.model.NetWorthSnapshot;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
 import org.slf4j.Logger;
@@ -14,17 +15,20 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Fetches balances from every source (Trading212 ISA, Trading212 Invest,
- * Crypto.com) and persists one row per currency observed. Neither upstream
- * API exposes historical portfolio value, so this service is the only place
- * history gets built up — one snapshot at a time.
+ * Crypto.com, YNAB) and persists one row per currency observed. Neither
+ * upstream API exposes historical portfolio value, so this service is the
+ * only place history gets built up — one snapshot at a time.
  *
- * <p>All three sources are required: a missing credential or a failed API
+ * <p>All sources are required: a missing credential or a failed API
  * call aborts the whole snapshot (nothing is saved) rather than silently
  * persisting a partial total. This is deliberate — a silently-partial total
  * once produced a real, wrong row in the history that went unnoticed for
@@ -39,6 +43,7 @@ public class NetWorthSnapshotService {
 
     private final Trading212Client trading212Client;
     private final CryptoComClient cryptoComClient;
+    private final YnabClient ynabClient;
     private final ExchangeRateClient exchangeRateClient;
     private final NetWorthSnapshotRepository repository;
 
@@ -66,12 +71,26 @@ public class NetWorthSnapshotService {
     @Value("${networth.exchange-rate.api-key}")
     private String exchangeRateApiKey;
 
+    @Value("${networth.ynab.api-token}")
+    private String ynabApiToken;
+
+    @Value("${networth.ynab.budget-id}")
+    private String ynabBudgetId;
+
+    @Value("${networth.ynab.chase-account-ids}")
+    private String ynabChaseAccountIds;
+
+    @Value("${networth.ynab.amex-account-ids}")
+    private String ynabAmexAccountIds;
+
     public NetWorthSnapshotService(Trading212Client trading212Client,
                                     CryptoComClient cryptoComClient,
+                                    YnabClient ynabClient,
                                     ExchangeRateClient exchangeRateClient,
                                     NetWorthSnapshotRepository repository) {
         this.trading212Client = trading212Client;
         this.cryptoComClient = cryptoComClient;
+        this.ynabClient = ynabClient;
         this.exchangeRateClient = exchangeRateClient;
         this.repository = repository;
     }
@@ -93,12 +112,13 @@ public class NetWorthSnapshotService {
                 ? "https://demo.trading212.com"
                 : "https://live.trading212.com";
 
-        // currency -> [t212Total, cryptoTotal]
+        // currency -> [t212Total, cryptoTotal, chaseTotal, amexDebtTotal]
         Map<String, double[]> totalsByCurrency = new LinkedHashMap<>();
 
         addTrading212Account(totalsByCurrency, baseUrl, "ISA", isaApiKey, isaApiSecret);
         addTrading212Account(totalsByCurrency, baseUrl, "Invest", investApiKey, investApiSecret);
         addCryptoCom(totalsByCurrency);
+        addYnabAccounts(totalsByCurrency);
 
         Instant now = Instant.now();
         List<NetWorthSnapshot> rows = new ArrayList<>();
@@ -106,6 +126,8 @@ public class NetWorthSnapshotService {
             String currency = entry.getKey();
             double t212Total = entry.getValue()[0];
             double cryptoTotal = entry.getValue()[1];
+            double chaseTotal = entry.getValue()[2];
+            double amexDebtTotal = entry.getValue()[3];
 
             NetWorthSnapshot previous = repository.findFirstByCurrencyOrderByTimestampDescIdDesc(currency)
                     .orElse(null);
@@ -113,7 +135,8 @@ public class NetWorthSnapshotService {
                     ? previous.getPensionTotal() : 0.0;
             double barclaysSharesTotal = previous != null && previous.getBarclaysSharesTotal() != null
                     ? previous.getBarclaysSharesTotal() : 0.0;
-            double grandTotal = round2(t212Total + cryptoTotal + pensionTotal + barclaysSharesTotal);
+            double grandTotal = round2(t212Total + cryptoTotal + pensionTotal + barclaysSharesTotal
+                    + chaseTotal - amexDebtTotal);
 
             CurrencyConversions conversions = fetchCurrencyConversions(currency, grandTotal);
 
@@ -124,15 +147,19 @@ public class NetWorthSnapshotService {
             snapshot.setCryptoTotal(round2(cryptoTotal));
             snapshot.setPensionTotal(round2(pensionTotal));
             snapshot.setBarclaysSharesTotal(round2(barclaysSharesTotal));
+            snapshot.setChaseTotal(round2(chaseTotal));
+            snapshot.setAmexDebtTotal(round2(amexDebtTotal));
             snapshot.setGrandTotal(grandTotal);
             snapshot.setGrandTotalEur(conversions.eur());
             snapshot.setGrandTotalUsd(conversions.usd());
             snapshot.setGrandTotalMxn(conversions.mxn());
             snapshot.setGrandTotalJpy(conversions.jpy());
             rows.add(repository.save(snapshot));
-            log.info("Saved snapshot: currency={} t212Total={} cryptoTotal={} pensionTotal={} barclaysSharesTotal={} grandTotal={}",
+            log.info("Saved snapshot: currency={} t212Total={} cryptoTotal={} pensionTotal={} barclaysSharesTotal={} "
+                            + "chaseTotal={} amexDebtTotal={} grandTotal={}",
                     snapshot.getCurrency(), snapshot.getT212Total(), snapshot.getCryptoTotal(),
-                    snapshot.getPensionTotal(), snapshot.getBarclaysSharesTotal(), snapshot.getGrandTotal());
+                    snapshot.getPensionTotal(), snapshot.getBarclaysSharesTotal(),
+                    snapshot.getChaseTotal(), snapshot.getAmexDebtTotal(), snapshot.getGrandTotal());
         }
         return rows;
     }
@@ -159,7 +186,7 @@ public class NetWorthSnapshotService {
                 : currentValue + available + reserved + inPies;
 
         log.info("Trading212 {} account total: {} {}", label, totalValue, currency);
-        totalsByCurrency.computeIfAbsent(currency, c -> new double[2])[0] += totalValue;
+        totalsByCurrency.computeIfAbsent(currency, c -> new double[4])[0] += totalValue;
     }
 
     private void addCryptoCom(Map<String, double[]> totalsByCurrency) {
@@ -179,7 +206,7 @@ public class NetWorthSnapshotService {
                 continue;
             }
             String currency = balance.path("currency").asText("");
-            totalsByCurrency.computeIfAbsent(currency, c -> new double[2])[1] += amount;
+            totalsByCurrency.computeIfAbsent(currency, c -> new double[4])[1] += amount;
         }
 
         // Use the portfolio breakdown (not raw wallet balances) so staked/
@@ -191,9 +218,63 @@ public class NetWorthSnapshotService {
                 continue;
             }
             String currency = product.path("price_native").path("currency").asText("");
-            totalsByCurrency.computeIfAbsent(currency, c -> new double[2])[1] += amount;
+            totalsByCurrency.computeIfAbsent(currency, c -> new double[4])[1] += amount;
         }
         log.info("Crypto.com balances fetched");
+    }
+
+    /**
+     * Sums YNAB account balances into chaseTotal/amexDebtTotal by matching a
+     * configured set of account IDs (YNAB account names carry no bank identity,
+     * e.g. "CreditCard – 1002", so name matching isn't viable here). Amex
+     * balances are stored as debt magnitude (positive = owed), the inverse of
+     * YNAB's own sign convention for credit card balances.
+     */
+    private void addYnabAccounts(Map<String, double[]> totalsByCurrency) {
+        if (ynabApiToken == null || ynabApiToken.isBlank() || ynabBudgetId == null || ynabBudgetId.isBlank()) {
+            log.warn("YNAB is not configured (missing API token/budget id)");
+            throw new IllegalStateException(
+                    "YNAB is not configured (missing API token/budget id) — refusing to save a snapshot "
+                            + "with a partial total. Set YNAB_API_TOKEN / YNAB_BUDGET_ID.");
+        }
+
+        Set<String> chaseAccountIds = parseIdSet(ynabChaseAccountIds);
+        Set<String> amexAccountIds = parseIdSet(ynabAmexAccountIds);
+
+        log.info("Fetching YNAB accounts and budget currency");
+        JsonNode settings = ynabClient.fetchBudgetSettings(ynabBudgetId, ynabApiToken);
+        String currency = settings.path("data").path("settings").path("currency_format").path("iso_code").asText("");
+
+        double chaseTotal = 0;
+        double amexDebtTotal = 0;
+        JsonNode accounts = ynabClient.fetchAccounts(ynabBudgetId, ynabApiToken).path("data").path("accounts");
+        for (JsonNode account : accounts) {
+            if (account.path("deleted").asBoolean(false) || account.path("closed").asBoolean(false)) {
+                continue;
+            }
+            String id = account.path("id").asText("");
+            double balance = account.path("balance").asLong(0) / 1000.0;
+            if (chaseAccountIds.contains(id)) {
+                chaseTotal += balance;
+            } else if (amexAccountIds.contains(id)) {
+                amexDebtTotal += -balance;
+            }
+        }
+
+        log.info("YNAB totals: currency={} chaseTotal={} amexDebtTotal={}", currency, chaseTotal, amexDebtTotal);
+        double[] totals = totalsByCurrency.computeIfAbsent(currency, c -> new double[4]);
+        totals[2] += chaseTotal;
+        totals[3] += amexDebtTotal;
+    }
+
+    private Set<String> parseIdSet(String csv) {
+        if (csv == null || csv.isBlank()) {
+            return Set.of();
+        }
+        return Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
     }
 
     /**

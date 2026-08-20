@@ -1,11 +1,13 @@
 package com.isym444.networth.controller;
 
+import com.isym444.networth.dto.AmexTransaction;
 import com.isym444.networth.dto.NetWorthHistoryResponse;
 import com.isym444.networth.model.NetWorthSnapshot;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
 import com.isym444.networth.service.ChartService;
 import com.isym444.networth.service.NetWorthHistoryService;
 import com.isym444.networth.service.NetWorthSnapshotService;
+import com.isym444.networth.service.YnabTransactionService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,15 +27,18 @@ public class NetWorthController {
     private final NetWorthHistoryService historyService;
     private final NetWorthSnapshotRepository repository;
     private final ChartService chartService;
+    private final YnabTransactionService ynabTransactionService;
 
     public NetWorthController(NetWorthSnapshotService snapshotService,
                                NetWorthHistoryService historyService,
                                NetWorthSnapshotRepository repository,
-                               ChartService chartService) {
+                               ChartService chartService,
+                               YnabTransactionService ynabTransactionService) {
         this.snapshotService = snapshotService;
         this.historyService = historyService;
         this.repository = repository;
         this.chartService = chartService;
+        this.ynabTransactionService = ynabTransactionService;
     }
 
     /** Trigger a snapshot on demand (the same logic the daily cron job runs). */
@@ -45,6 +50,11 @@ public class NetWorthController {
     @GetMapping("/history")
     public ResponseEntity<NetWorthHistoryResponse> history(@RequestParam(required = false) String currency) {
         return ResponseEntity.ok(historyService.getHistory(currency));
+    }
+
+    @GetMapping("/amex/transactions")
+    public ResponseEntity<List<AmexTransaction>> amexTransactions(@RequestParam(defaultValue = "30") int days) {
+        return ResponseEntity.ok(ynabTransactionService.getRecentAmexTransactions(days));
     }
 
     @GetMapping(value = "/chart", produces = MediaType.IMAGE_PNG_VALUE)

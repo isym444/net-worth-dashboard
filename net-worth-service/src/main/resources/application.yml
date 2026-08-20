@@ -36,8 +36,8 @@ spring:
         # (t212_total, etc.) — quoting a lowercase identifier in Postgres is a no-op.
         globally_quoted_identifiers: true
 
-# Trading212/Crypto.com credentials and the snapshot schedule. All three
-# key/secret pairs (ISA, Invest, Crypto.com) are required — a snapshot
+# Trading212/Crypto.com/YNAB credentials and the snapshot schedule. All four
+# credential sets (ISA, Invest, Crypto.com, YNAB) are required — a snapshot
 # aborts and saves nothing if any one of them is missing or its API call
 # fails, rather than silently persisting a partial total.
 networth:
@@ -59,6 +59,11 @@ networth:
   cryptocom:
     api-key: ${CRYPTO_COM_KEY:}
     api-secret: ${CRYPTO_COM_SECRET:}
+  ynab:
+    api-token: ${YNAB_API_TOKEN:}
+    budget-id: ${YNAB_BUDGET_ID:last-used}
+    chase-account-ids: ${YNAB_CHASE_ACCOUNT_IDS:}
+    amex-account-ids: ${YNAB_AMEX_ACCOUNT_IDS:}
   exchange-rate:
     api-key: ${EXCHANGE_RATE_API_KEY:}
 

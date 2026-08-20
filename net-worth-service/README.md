@@ -28,6 +28,10 @@ data point.
 | `TRADING212_API_KEY_INVEST` / `TRADING212_API_SECRET_INVEST` | no | Trading212 Invest account key |
 | `TRADING212_ENV` | no | `live` (default) or `demo` |
 | `CRYPTO_COM_KEY` / `CRYPTO_COM_SECRET` | no | Crypto.com App API key pair |
+| `YNAB_API_TOKEN` | no | YNAB Personal Access Token (Account Settings → Developer Settings in the YNAB web app) |
+| `YNAB_BUDGET_ID` | no | YNAB budget ID to read from. Default `last-used` (YNAB's alias for your most recently used budget) |
+| `YNAB_CHASE_ACCOUNT_IDS` | no | Comma-separated YNAB account IDs summed into `chase_total`. YNAB account names carry no bank identity (e.g. "CreditCard – 1002"), so this is matched by ID, not name — find IDs via `GET /budgets/{budget_id}/accounts`. |
+| `YNAB_AMEX_ACCOUNT_IDS` | no | Comma-separated YNAB account IDs summed into `amex_total` (stored as debt magnitude) and returned by `/api/v1/amex/transactions`. |
 | `SNAPSHOT_CRON` | no | Cron expression (6-field, Spring format: sec min hour day month weekday) for the daily job. Default `0 0 7 * * *` (07:00) |
 | `SNAPSHOT_ZONE` | no | Timezone for `SNAPSHOT_CRON`. Default `UTC` |
 | `PORT` | no | Listen port. Render sets this automatically |
@@ -45,6 +49,7 @@ snapshots will fail with "No API keys configured".
 | `POST /api/v1/snapshot` | Fetch balances right now and save a row (same logic the cron job runs). Returns the saved row(s) as JSON. |
 | `GET /api/v1/history?currency=GBP` | Snapshot history for a currency plus projected net worth at a few future ages. `currency` defaults to whichever currency has been logged. See response shape below. |
 | `GET /api/v1/chart?currency=GBP` | PNG line chart (Trading212 / Crypto.com / net worth) rendered from the history. |
+| `GET /api/v1/amex/transactions?days=30` | Recent transactions from any YNAB account with "amex" in its name, newest first. `days` defaults to 30. |
 | `GET /actuator/health` | Health check (used by Render) |
 
 `GET /api/v1/history` returns a JSON object, not a bare array:
@@ -84,6 +89,9 @@ export TRADING212_API_KEY_ISA=...
 export TRADING212_API_KEY_INVEST=...
 export CRYPTO_COM_KEY=...
 export CRYPTO_COM_SECRET=...
+export YNAB_API_TOKEN=...
+export YNAB_CHASE_ACCOUNT_IDS=...
+export YNAB_AMEX_ACCOUNT_IDS=...
 docker compose up --build
 ```
 
@@ -94,6 +102,7 @@ curl -X POST http://localhost:8080/api/v1/snapshot
 curl http://localhost:8080/api/v1/history
 # => {"snapshots": [...], "expectedNetWorthAt40": ..., "expectedNetWorthAt50": ..., "expectedNetWorthAt60": ..., "expectedNetWorthAt65": ...}
 curl http://localhost:8080/api/v1/chart -o chart.png
+curl "http://localhost:8080/api/v1/amex/transactions?days=30"
 ```
 
 ## Deploy to Render

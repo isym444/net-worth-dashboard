@@ -5,6 +5,7 @@ import com.isym444.networth.repository.NetWorthSnapshotRepository;
 import com.isym444.networth.service.ChartService;
 import com.isym444.networth.service.NetWorthHistoryService;
 import com.isym444.networth.service.NetWorthSnapshotService;
+import com.isym444.networth.service.YnabTransactionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
@@ -25,7 +26,8 @@ class NetWorthControllerTest {
                 mock(NetWorthSnapshotService.class),
                 historyService,
                 mock(NetWorthSnapshotRepository.class),
-                mock(ChartService.class));
+                mock(ChartService.class),
+                mock(YnabTransactionService.class));
 
         ResponseEntity<NetWorthHistoryResponse> response = controller.history("GBP");
 
