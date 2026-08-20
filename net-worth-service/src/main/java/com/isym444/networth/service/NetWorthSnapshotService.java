@@ -137,6 +137,7 @@ public class NetWorthSnapshotService {
                     ? previous.getBarclaysSharesTotal() : 0.0;
             double grandTotal = round2(t212Total + cryptoTotal + pensionTotal + barclaysSharesTotal
                     + chaseTotal - amexDebtTotal);
+            double amountLeft = round2(chaseTotal - amexDebtTotal);
 
             CurrencyConversions conversions = fetchCurrencyConversions(currency, grandTotal);
 
@@ -149,6 +150,7 @@ public class NetWorthSnapshotService {
             snapshot.setBarclaysSharesTotal(round2(barclaysSharesTotal));
             snapshot.setChaseTotal(round2(chaseTotal));
             snapshot.setAmexDebtTotal(round2(amexDebtTotal));
+            snapshot.setAmountLeft(amountLeft);
             snapshot.setGrandTotal(grandTotal);
             snapshot.setGrandTotalEur(conversions.eur());
             snapshot.setGrandTotalUsd(conversions.usd());
@@ -156,10 +158,11 @@ public class NetWorthSnapshotService {
             snapshot.setGrandTotalJpy(conversions.jpy());
             rows.add(repository.save(snapshot));
             log.info("Saved snapshot: currency={} t212Total={} cryptoTotal={} pensionTotal={} barclaysSharesTotal={} "
-                            + "chaseTotal={} amexDebtTotal={} grandTotal={}",
+                            + "chaseTotal={} amexDebtTotal={} amountLeft={} grandTotal={}",
                     snapshot.getCurrency(), snapshot.getT212Total(), snapshot.getCryptoTotal(),
                     snapshot.getPensionTotal(), snapshot.getBarclaysSharesTotal(),
-                    snapshot.getChaseTotal(), snapshot.getAmexDebtTotal(), snapshot.getGrandTotal());
+                    snapshot.getChaseTotal(), snapshot.getAmexDebtTotal(), snapshot.getAmountLeft(),
+                    snapshot.getGrandTotal());
         }
         return rows;
     }

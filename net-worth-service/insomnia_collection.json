@@ -1,0 +1,226 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-08-20T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v8.0.0",
+  "resources": [
+    {
+      "_id": "wrk_net_worth_service",
+      "_type": "workspace",
+      "parentId": null,
+      "name": "Net Worth Service",
+      "description": "Endpoints for the net-worth-service Spring Boot backend",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_net_worth_service",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8080",
+        "apiKey": ""
+      },
+      "dataPropertyOrder": {
+        "&": ["baseUrl", "apiKey"]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 0
+    },
+    {
+      "_id": "env_local",
+      "_type": "environment",
+      "parentId": "env_base",
+      "name": "Local (docker compose)",
+      "data": {
+        "baseUrl": "http://localhost:8080",
+        "apiKey": ""
+      },
+      "dataPropertyOrder": {
+        "&": ["baseUrl", "apiKey"]
+      },
+      "color": "#7d69cb",
+      "isPrivate": false,
+      "metaSortKey": 1
+    },
+    {
+      "_id": "env_production",
+      "_type": "environment",
+      "parentId": "env_base",
+      "name": "Production (Render)",
+      "data": {
+        "baseUrl": "https://net-worth-service-nt7d.onrender.com",
+        "apiKey": ""
+      },
+      "dataPropertyOrder": {
+        "&": ["baseUrl", "apiKey"]
+      },
+      "color": "#d33c3c",
+      "isPrivate": false,
+      "metaSortKey": 2
+    },
+    {
+      "_id": "fld_net_worth_api",
+      "_type": "request_group",
+      "parentId": "wrk_net_worth_service",
+      "name": "Net Worth API",
+      "description": "",
+      "metaSortKey": 0
+    },
+    {
+      "_id": "req_take_snapshot",
+      "_type": "request",
+      "parentId": "fld_net_worth_api",
+      "name": "Take Snapshot",
+      "description": "Fetches balances right now (Trading212, Crypto.com, YNAB) and saves a row per currency. Same logic the daily cron job runs.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/v1/snapshot",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "X-Api-Key",
+          "value": "{{ _.apiKey }}",
+          "description": "Only required when DASHBOARD_ACCESS_KEY is set on the server (e.g. production)"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 0,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_history",
+      "_type": "request",
+      "parentId": "fld_net_worth_api",
+      "name": "Get History",
+      "description": "Snapshot history for a currency plus projected net worth at ages 40/50/60/65. Omit currency to default to whichever currency has been logged.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/v1/history",
+      "body": {},
+      "parameters": [
+        {
+          "name": "currency",
+          "value": "GBP",
+          "disabled": true,
+          "description": "Optional. Defaults to whichever currency sorts first alphabetically among logged snapshots."
+        }
+      ],
+      "headers": [
+        {
+          "name": "X-Api-Key",
+          "value": "{{ _.apiKey }}",
+          "description": "Only required when DASHBOARD_ACCESS_KEY is set on the server (e.g. production)"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_amex_transactions",
+      "_type": "request",
+      "parentId": "fld_net_worth_api",
+      "name": "Get Recent Amex Transactions",
+      "description": "Recent transactions from the configured YNAB Amex accounts (YNAB_AMEX_ACCOUNT_IDS), newest first.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/v1/amex/transactions",
+      "body": {},
+      "parameters": [
+        {
+          "name": "days",
+          "value": "30",
+          "disabled": false,
+          "description": "Optional, defaults to 30. Number of days back to fetch transactions for."
+        }
+      ],
+      "headers": [
+        {
+          "name": "X-Api-Key",
+          "value": "{{ _.apiKey }}",
+          "description": "Only required when DASHBOARD_ACCESS_KEY is set on the server (e.g. production)"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_chart",
+      "_type": "request",
+      "parentId": "fld_net_worth_api",
+      "name": "Get Chart (PNG)",
+      "description": "PNG line chart (Trading212 / Crypto.com / net worth) rendered from the history. Returns 204 No Content if there's no snapshot history yet.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/v1/chart",
+      "body": {},
+      "parameters": [
+        {
+          "name": "currency",
+          "value": "GBP",
+          "disabled": true,
+          "description": "Optional. Same default-resolution rule as /history."
+        }
+      ],
+      "headers": [
+        {
+          "name": "X-Api-Key",
+          "value": "{{ _.apiKey }}",
+          "description": "Only required when DASHBOARD_ACCESS_KEY is set on the server (e.g. production)"
+        },
+        {
+          "name": "Accept",
+          "value": "image/png"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_health",
+      "_type": "request",
+      "parentId": "fld_net_worth_api",
+      "name": "Health Check",
+      "description": "Actuator health endpoint. Always exempt from the X-Api-Key check, used by Render for health checks.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/actuator/health",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": 4,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    }
+  ]
+}

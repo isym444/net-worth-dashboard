@@ -45,6 +45,9 @@ public class NetWorthSnapshot {
     @Column(name = "amex_total")
     private Double amexDebtTotal;
 
+    @Column(name = "amount_left")
+    private Double amountLeft;
+
     @Column(name = "grand_total", nullable = false)
     private Double grandTotal;
 
@@ -130,6 +133,14 @@ public class NetWorthSnapshot {
 
     public void setAmexDebtTotal(Double amexDebtTotal) {
         this.amexDebtTotal = amexDebtTotal;
+    }
+
+    public Double getAmountLeft() {
+        return amountLeft;
+    }
+
+    public void setAmountLeft(Double amountLeft) {
+        this.amountLeft = amountLeft;
     }
 
     public Double getGrandTotal() {

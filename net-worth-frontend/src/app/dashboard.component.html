@@ -39,11 +39,25 @@
       </div>
       <div class="stat-card">
         <span>Amex Debt</span>
-        <strong>{{ latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        <strong class="negative">{{ latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
+      <div class="stat-card stat-card--info">
+        <span>Amount Left</span>
+        <strong>
+          {{ latestSnapshot.chaseTotal - latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}
+        </strong>
+      </div>
+      <div class="stat-card stat-card--info">
+        <span>Daily Spend</span>
+        <strong>{{ dailySpend(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
       </div>
       <div class="stat-card stat-card--primary">
         <span>Net worth</span>
         <strong>{{ latestSnapshot.grandTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+      </div>
+      <div class="stat-card stat-card--warning">
+        <span>Annual Return (7%)</span>
+        <strong>{{ latestSnapshot.grandTotal * 0.07 | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
       </div>
       <div class="stat-card">
         <span>Net worth (EUR)</span>

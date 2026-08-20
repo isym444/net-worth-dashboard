@@ -1,5 +1,6 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { daysUntilPaycheck, nextPaycheckDate } from './bank-holidays';
 import { NetWorthService, NetWorthSnapshot } from './net-worth.service';
 
 @Component({
@@ -81,6 +82,15 @@ export class DashboardComponent implements OnInit {
         this.error.set(this.extractError(err));
       },
     });
+  }
+
+  /** Not persisted anywhere — purely derived from the latest snapshot + today's date. */
+  protected dailySpend(snapshot: NetWorthSnapshot): number {
+    const amountLeft = snapshot.chaseTotal - snapshot.amexDebtTotal;
+    const now = new Date();
+    const payday = nextPaycheckDate(now);
+    const days = daysUntilPaycheck(now, payday);
+    return amountLeft / days;
   }
 
   private extractError(err: unknown): string {

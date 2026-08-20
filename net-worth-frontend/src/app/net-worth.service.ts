@@ -13,6 +13,7 @@ export interface NetWorthSnapshot {
   barclaysSharesTotal: number;
   chaseTotal: number;
   amexDebtTotal: number;
+  amountLeft: number;
   grandTotal: number;
   grandTotalEur: number | null;
   grandTotalUsd: number | null;

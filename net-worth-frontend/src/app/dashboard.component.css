@@ -142,6 +142,10 @@ header button:disabled {
   color: var(--text);
 }
 
+.stat-card strong.negative {
+  color: var(--error);
+}
+
 .stat-card--primary {
   border-color: var(--accent);
   background: var(--surface-raised);
@@ -150,6 +154,26 @@ header button:disabled {
 .stat-card--primary strong {
   font-size: 1.5rem;
   color: var(--accent);
+}
+
+.stat-card--info {
+  border-color: var(--info);
+  background: var(--surface-raised);
+}
+
+.stat-card--info strong {
+  font-size: 1.5rem;
+  color: var(--info);
+}
+
+.stat-card--warning {
+  border-color: var(--warning);
+  background: var(--surface-raised);
+}
+
+.stat-card--warning strong {
+  font-size: 1.5rem;
+  color: var(--warning);
 }
 
 .chart-card {
