@@ -87,10 +87,19 @@ export class DashboardComponent implements OnInit {
   /** Not persisted anywhere — purely derived from the latest snapshot + today's date. */
   protected dailySpend(snapshot: NetWorthSnapshot): number {
     const amountLeft = snapshot.chaseTotal - snapshot.amexDebtTotal;
+    return amountLeft / this.daysUntilNextPaycheck();
+  }
+
+  /** Same as dailySpend, but reserves £400 (chaseTotal - amexDebtTotal) to invest at month end. */
+  protected dailySpendToInvestBuffer(snapshot: NetWorthSnapshot): number {
+    const amountLeft = snapshot.chaseTotal - snapshot.amexDebtTotal;
+    return (amountLeft - 400) / this.daysUntilNextPaycheck();
+  }
+
+  private daysUntilNextPaycheck(): number {
     const now = new Date();
     const payday = nextPaycheckDate(now);
-    const days = daysUntilPaycheck(now, payday);
-    return amountLeft / days;
+    return daysUntilPaycheck(now, payday);
   }
 
   private extractError(err: unknown): string {

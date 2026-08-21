@@ -112,8 +112,10 @@ function previousWorkingDay(date: Date, holidays: Set<string>): Date {
 /**
  * Paycheck lands on the 23rd of the month, or the nearest working day before
  * it if the 23rd is a weekend or bank holiday. Returns the next occurrence
- * on or after `from` — if `from` is today's (adjusted) payday, that counts
- * as the next paycheck rather than skipping to next month.
+ * strictly after `from` — if `from` is today's (adjusted) payday, that
+ * paycheck has already landed, so this skips ahead to next month's rather
+ * than returning today. That keeps "days until paycheck" (and Max Daily
+ * Spend) meaningful on payday itself, instead of collapsing to 1.
  */
 export function nextPaycheckDate(from: Date): Date {
   const year = from.getFullYear();
@@ -122,7 +124,7 @@ export function nextPaycheckDate(from: Date): Date {
 
   const thisMonthHolidays = new Set(getEnglishBankHolidays(year).map(dateKey));
   const thisMonthPayday = previousWorkingDay(new Date(year, month, 23), thisMonthHolidays);
-  if (thisMonthPayday.getTime() >= today.getTime()) {
+  if (thisMonthPayday.getTime() > today.getTime()) {
     return thisMonthPayday;
   }
 
