@@ -1,6 +1,7 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { daysUntilPaycheck, nextPaycheckDate } from './bank-holidays';
+import { environment } from '../environments/environment';
 import { NetWorthService, NetWorthSnapshot } from './net-worth.service';
 
 @Component({
@@ -84,16 +85,24 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  /**
+   * Guaranteed monthly subscription spend — set aside before any daily-spend
+   * math. Set via MONTHLY_SUBSCRIPTIONS at build time (see scripts/set-env.js);
+   * change it in Render's env vars and redeploy, no code change needed.
+   */
+  private readonly monthlySubscriptions = environment.monthlySubscriptions;
+  private readonly investBuffer = 400;
+
   /** Not persisted anywhere — purely derived from the latest snapshot + today's date. */
   protected dailySpend(snapshot: NetWorthSnapshot): number {
     const amountLeft = snapshot.chaseTotal - snapshot.amexDebtTotal;
-    return amountLeft / this.daysUntilNextPaycheck();
+    return (amountLeft - this.monthlySubscriptions) / this.daysUntilNextPaycheck();
   }
 
-  /** Same as dailySpend, but reserves £400 (chaseTotal - amexDebtTotal) to invest at month end. */
+  /** Same as dailySpend, but also reserves £400 (chaseTotal - amexDebtTotal) to invest at month end. */
   protected dailySpendToInvestBuffer(snapshot: NetWorthSnapshot): number {
     const amountLeft = snapshot.chaseTotal - snapshot.amexDebtTotal;
-    return (amountLeft - 400) / this.daysUntilNextPaycheck();
+    return (amountLeft - this.monthlySubscriptions - this.investBuffer) / this.daysUntilNextPaycheck();
   }
 
   private daysUntilNextPaycheck(): number {
