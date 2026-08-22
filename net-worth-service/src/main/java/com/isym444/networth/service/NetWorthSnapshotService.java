@@ -46,6 +46,7 @@ public class NetWorthSnapshotService {
     private final YnabClient ynabClient;
     private final ExchangeRateClient exchangeRateClient;
     private final NetWorthSnapshotRepository repository;
+    private final AmexInsightService amexInsightService;
 
     @Value("${networth.trading212.env}")
     private String trading212Env;
@@ -87,19 +88,21 @@ public class NetWorthSnapshotService {
                                     CryptoComClient cryptoComClient,
                                     YnabClient ynabClient,
                                     ExchangeRateClient exchangeRateClient,
-                                    NetWorthSnapshotRepository repository) {
+                                    NetWorthSnapshotRepository repository,
+                                    AmexInsightService amexInsightService) {
         this.trading212Client = trading212Client;
         this.cryptoComClient = cryptoComClient;
         this.ynabClient = ynabClient;
         this.exchangeRateClient = exchangeRateClient;
         this.repository = repository;
+        this.amexInsightService = amexInsightService;
     }
 
     @Scheduled(cron = "${networth.snapshot.cron}", zone = "${networth.snapshot.zone}")
     public void scheduledSnapshot() {
         log.info("Running scheduled net worth snapshot");
         try {
-            List<NetWorthSnapshot> saved = takeSnapshot();
+            List<NetWorthSnapshot> saved = takeSnapshot(true);
             log.info("Saved {} snapshot row(s)", saved.size());
         } catch (Exception e) {
             log.error("Scheduled net worth snapshot failed", e);
@@ -107,7 +110,20 @@ public class NetWorthSnapshotService {
     }
 
     public List<NetWorthSnapshot> takeSnapshot() {
-        log.info("Taking net worth snapshot (trading212.env={})", trading212Env);
+        return takeSnapshot(false);
+    }
+
+    /**
+     * @param regenerateCommentary if true, calls the LLM once for fresh Amex spending
+     *                             commentary and stamps it onto every row in this batch
+     *                             (used by the daily cron run). If false, each row's
+     *                             commentary is copied forward from the previous row for
+     *                             its currency instead (used by the manual "take snapshot"
+     *                             button, to avoid an LLM call on every click).
+     */
+    public List<NetWorthSnapshot> takeSnapshot(boolean regenerateCommentary) {
+        log.info("Taking net worth snapshot (trading212.env={}, regenerateCommentary={})",
+                trading212Env, regenerateCommentary);
         String baseUrl = "demo".equalsIgnoreCase(trading212Env)
                 ? "https://demo.trading212.com"
                 : "https://live.trading212.com";
@@ -119,6 +135,15 @@ public class NetWorthSnapshotService {
         addTrading212Account(totalsByCurrency, baseUrl, "Invest", investApiKey, investApiSecret);
         addCryptoCom(totalsByCurrency);
         addYnabAccounts(totalsByCurrency);
+
+        String freshCommentary = null;
+        if (regenerateCommentary) {
+            try {
+                freshCommentary = amexInsightService.generateCommentary();
+            } catch (Exception e) {
+                log.warn("AI commentary generation failed, falling back to carried-forward value", e);
+            }
+        }
 
         Instant now = Instant.now();
         List<NetWorthSnapshot> rows = new ArrayList<>();
@@ -156,6 +181,9 @@ public class NetWorthSnapshotService {
             snapshot.setGrandTotalUsd(conversions.usd());
             snapshot.setGrandTotalMxn(conversions.mxn());
             snapshot.setGrandTotalJpy(conversions.jpy());
+            snapshot.setAiCommentary(freshCommentary != null
+                    ? freshCommentary
+                    : (previous != null ? previous.getAiCommentary() : null));
             rows.add(repository.save(snapshot));
             log.info("Saved snapshot: currency={} t212Total={} cryptoTotal={} pensionTotal={} barclaysSharesTotal={} "
                             + "chaseTotal={} amexDebtTotal={} amountLeft={} grandTotal={}",
