@@ -20,7 +20,6 @@ export interface NetWorthSnapshot {
   grandTotalMxn: number | null;
   grandTotalJpy: number | null;
   aiCommentary: string | null;
-  estimatedNetWorth1y: number | null;
 }
 
 export interface NetWorthHistoryResponse {
@@ -29,6 +28,11 @@ export interface NetWorthHistoryResponse {
   expectedNetWorthAt50: number | null;
   expectedNetWorthAt60: number | null;
   expectedNetWorthAt65: number | null;
+  expectedNetWorthWithContributionsAt40: number | null;
+  expectedNetWorthWithContributionsAt50: number | null;
+  expectedNetWorthWithContributionsAt60: number | null;
+  expectedNetWorthWithContributionsAt65: number | null;
+  estimatedNetWorth1y: number | null;
   monthlyContribution: number | null;
 }
 
@@ -41,6 +45,10 @@ export interface AmexInsightsResponse {
 export interface MonthlyContributionResponse {
   monthlyContribution: number;
   estimatedNetWorth1y: number | null;
+  expectedNetWorthWithContributionsAt40: number | null;
+  expectedNetWorthWithContributionsAt50: number | null;
+  expectedNetWorthWithContributionsAt60: number | null;
+  expectedNetWorthWithContributionsAt65: number | null;
 }
 
 @Injectable({ providedIn: 'root' })

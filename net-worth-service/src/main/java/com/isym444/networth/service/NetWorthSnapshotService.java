@@ -47,7 +47,6 @@ public class NetWorthSnapshotService {
     private final ExchangeRateClient exchangeRateClient;
     private final NetWorthSnapshotRepository repository;
     private final AmexInsightService amexInsightService;
-    private final PortfolioProjectionService portfolioProjectionService;
 
     @Value("${networth.trading212.env}")
     private String trading212Env;
@@ -90,15 +89,13 @@ public class NetWorthSnapshotService {
                                     YnabClient ynabClient,
                                     ExchangeRateClient exchangeRateClient,
                                     NetWorthSnapshotRepository repository,
-                                    AmexInsightService amexInsightService,
-                                    PortfolioProjectionService portfolioProjectionService) {
+                                    AmexInsightService amexInsightService) {
         this.trading212Client = trading212Client;
         this.cryptoComClient = cryptoComClient;
         this.ynabClient = ynabClient;
         this.exchangeRateClient = exchangeRateClient;
         this.repository = repository;
         this.amexInsightService = amexInsightService;
-        this.portfolioProjectionService = portfolioProjectionService;
     }
 
     @Scheduled(cron = "${networth.snapshot.cron}", zone = "${networth.snapshot.zone}")
@@ -148,8 +145,6 @@ public class NetWorthSnapshotService {
             }
         }
 
-        double monthlyContribution = portfolioProjectionService.getMonthlyContribution();
-
         Instant now = Instant.now();
         List<NetWorthSnapshot> rows = new ArrayList<>();
         for (Map.Entry<String, double[]> entry : totalsByCurrency.entrySet()) {
@@ -189,8 +184,6 @@ public class NetWorthSnapshotService {
             snapshot.setAiCommentary(freshCommentary != null
                     ? freshCommentary
                     : (previous != null ? previous.getAiCommentary() : null));
-            snapshot.setEstimatedNetWorth1y(
-                    portfolioProjectionService.calculateEstimatedNetWorth1y(grandTotal, monthlyContribution));
             rows.add(repository.save(snapshot));
             log.info("Saved snapshot: currency={} t212Total={} cryptoTotal={} pensionTotal={} barclaysSharesTotal={} "
                             + "chaseTotal={} amexDebtTotal={} amountLeft={} grandTotal={}",

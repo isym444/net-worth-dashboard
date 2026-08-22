@@ -66,11 +66,6 @@ public class NetWorthSnapshot {
     @Column(name = "ai_commentary", columnDefinition = "text")
     private String aiCommentary;
 
-    // Nullable for the same reason as chaseTotal/amexTotal above: added after the
-    // table already held rows. Recalculated on every new snapshot going forward.
-    @Column(name = "estimated_net_worth_1y")
-    private Double estimatedNetWorth1y;
-
     public Long getId() {
         return id;
     }
@@ -197,13 +192,5 @@ public class NetWorthSnapshot {
 
     public void setAiCommentary(String aiCommentary) {
         this.aiCommentary = aiCommentary;
-    }
-
-    public Double getEstimatedNetWorth1y() {
-        return estimatedNetWorth1y;
-    }
-
-    public void setEstimatedNetWorth1y(Double estimatedNetWorth1y) {
-        this.estimatedNetWorth1y = estimatedNetWorth1y;
     }
 }

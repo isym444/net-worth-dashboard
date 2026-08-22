@@ -1,14 +1,10 @@
 package com.isym444.networth.service;
 
-import com.isym444.networth.dto.MonthlyContributionResponse;
-import com.isym444.networth.model.NetWorthSnapshot;
 import com.isym444.networth.model.PortfolioSettings;
-import com.isym444.networth.repository.NetWorthSnapshotRepository;
 import com.isym444.networth.repository.PortfolioSettingsRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
 
 /**
  * Projects net worth one year out: the current grand total plus twelve
@@ -25,12 +21,9 @@ public class PortfolioProjectionService {
     private static final int CONTRIBUTION_MONTHS = 12;
 
     private final PortfolioSettingsRepository settingsRepository;
-    private final NetWorthSnapshotRepository snapshotRepository;
 
-    public PortfolioProjectionService(PortfolioSettingsRepository settingsRepository,
-                                       NetWorthSnapshotRepository snapshotRepository) {
+    public PortfolioProjectionService(PortfolioSettingsRepository settingsRepository) {
         this.settingsRepository = settingsRepository;
-        this.snapshotRepository = snapshotRepository;
     }
 
     public double getMonthlyContribution() {
@@ -40,13 +33,13 @@ public class PortfolioProjectionService {
     }
 
     /**
-     * Persists the new monthly contribution default, then recomputes and
-     * saves {@code estimatedNetWorth1y} onto the latest snapshot row for the
-     * resolved currency (using that row's already-known grand total, no
-     * external API calls) so the dashboard's estimate reflects the change
-     * immediately, without waiting for the next snapshot.
+     * Persists the new monthly contribution default. Every net worth estimate
+     * that depends on it (1-year, and net worth at 40/50/60/65 with
+     * contributions) is computed fresh on every /history call from this
+     * setting plus the latest snapshot's grand total — nothing derived from
+     * it is stored, so there's nothing here to keep in sync.
      */
-    public MonthlyContributionResponse updateMonthlyContribution(double monthlyContribution, String currency) {
+    public double updateMonthlyContribution(double monthlyContribution) {
         if (monthlyContribution < 0) {
             throw new IllegalArgumentException("monthlyContribution must not be negative");
         }
@@ -61,20 +54,7 @@ public class PortfolioProjectionService {
         settings.setUpdatedAt(Instant.now());
         settingsRepository.save(settings);
 
-        Double estimate = null;
-        String resolved = resolveCurrency(currency);
-        if (resolved != null) {
-            NetWorthSnapshot latest = snapshotRepository
-                    .findFirstByCurrencyOrderByTimestampDescIdDesc(resolved)
-                    .orElse(null);
-            if (latest != null) {
-                estimate = calculateEstimatedNetWorth1y(latest.getGrandTotal(), monthlyContribution);
-                latest.setEstimatedNetWorth1y(estimate);
-                snapshotRepository.save(latest);
-            }
-        }
-
-        return new MonthlyContributionResponse(monthlyContribution, estimate);
+        return monthlyContribution;
     }
 
     /**
@@ -84,26 +64,28 @@ public class PortfolioProjectionService {
      * compounds for only one twelfth of the year.
      */
     double calculateEstimatedNetWorth1y(double grandTotal, double monthlyContribution) {
-        double lumpSumFutureValue = grandTotal * (1 + ANNUAL_GROWTH_RATE);
+        return calculateEstimatedNetWorthWithContributions(grandTotal, monthlyContribution, 1.0);
+    }
 
+    /**
+     * Same idea as {@link #calculateEstimatedNetWorth1y}, generalized to any
+     * horizon: the grand total compounds for {@code years}, and it's joined by
+     * one monthly contribution per month up to {@code round(years * 12)} of
+     * them, each compounding from its deposit date to the end of the horizon.
+     */
+    double calculateEstimatedNetWorthWithContributions(double grandTotal, double monthlyContribution, double years) {
+        double effectiveYears = Math.max(0, years);
+        double lumpSumFutureValue = grandTotal * Math.pow(1 + ANNUAL_GROWTH_RATE, effectiveYears);
+
+        long totalMonths = Math.round(effectiveYears * CONTRIBUTION_MONTHS);
         double contributionsFutureValue = 0;
-        for (int monthIndex = 0; monthIndex < CONTRIBUTION_MONTHS; monthIndex++) {
-            double monthsOfGrowth = CONTRIBUTION_MONTHS - monthIndex;
+        for (long monthIndex = 0; monthIndex < totalMonths; monthIndex++) {
+            long monthsOfGrowth = totalMonths - monthIndex;
             contributionsFutureValue += monthlyContribution
                     * Math.pow(1 + ANNUAL_GROWTH_RATE, monthsOfGrowth / (double) CONTRIBUTION_MONTHS);
         }
 
         return round2(lumpSumFutureValue + contributionsFutureValue);
-    }
-
-    // Same fallback NetWorthController.resolveCurrency/NetWorthHistoryService.resolveCurrency use:
-    // whichever currency sorts first alphabetically among logged snapshots.
-    private String resolveCurrency(String requested) {
-        if (requested != null && !requested.isBlank()) {
-            return requested;
-        }
-        List<String> currencies = snapshotRepository.findDistinctCurrencies();
-        return currencies.isEmpty() ? null : currencies.get(0);
     }
 
     private double round2(double value) {

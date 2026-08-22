@@ -2,7 +2,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { daysUntilPaycheck, nextPaycheckDate } from './bank-holidays';
 import { environment } from '../environments/environment';
-import { NetWorthService, NetWorthSnapshot } from './net-worth.service';
+import { MonthlyContributionResponse, NetWorthService, NetWorthSnapshot } from './net-worth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -19,7 +19,12 @@ export class DashboardComponent implements OnInit {
     at50: number | null;
     at60: number | null;
     at65: number | null;
+    withContributionsAt40: number | null;
+    withContributionsAt50: number | null;
+    withContributionsAt60: number | null;
+    withContributionsAt65: number | null;
   } | null>(null);
+  protected readonly estimatedNetWorth1y = signal<number | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly takingSnapshot = signal(false);
@@ -55,7 +60,12 @@ export class DashboardComponent implements OnInit {
           at50: data.expectedNetWorthAt50,
           at60: data.expectedNetWorthAt60,
           at65: data.expectedNetWorthAt65,
+          withContributionsAt40: data.expectedNetWorthWithContributionsAt40,
+          withContributionsAt50: data.expectedNetWorthWithContributionsAt50,
+          withContributionsAt60: data.expectedNetWorthWithContributionsAt60,
+          withContributionsAt65: data.expectedNetWorthWithContributionsAt65,
         });
+        this.estimatedNetWorth1y.set(data.estimatedNetWorth1y);
         this.monthlyContributionInput.set(data.monthlyContribution ?? 0);
         this.loading.set(false);
       },
@@ -104,7 +114,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  /** Persists the new monthly contribution and patches just the latest snapshot's estimate in place. */
+  /** Persists the new monthly contribution and patches every dependent projection in place. */
   updateMonthlyContribution(rawValue: string): void {
     const value = Number(rawValue);
     if (!Number.isFinite(value) || value < 0) {
@@ -118,7 +128,8 @@ export class DashboardComponent implements OnInit {
       next: (response) => {
         this.updatingContribution.set(false);
         this.monthlyContributionInput.set(response.monthlyContribution);
-        this.patchLatestEstimatedNetWorth1y(response.estimatedNetWorth1y);
+        this.estimatedNetWorth1y.set(response.estimatedNetWorth1y);
+        this.patchWithContributionsProjections(response);
       },
       error: (err: unknown) => {
         this.updatingContribution.set(false);
@@ -127,15 +138,18 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  private patchLatestEstimatedNetWorth1y(estimatedNetWorth1y: number | null): void {
-    const list = this.snapshots();
-    if (list.length === 0) {
+  private patchWithContributionsProjections(response: MonthlyContributionResponse): void {
+    const current = this.expectedNetWorth();
+    if (current === null) {
       return;
     }
-    const lastIndex = list.length - 1;
-    const updated = [...list];
-    updated[lastIndex] = { ...updated[lastIndex], estimatedNetWorth1y };
-    this.snapshots.set(updated);
+    this.expectedNetWorth.set({
+      ...current,
+      withContributionsAt40: response.expectedNetWorthWithContributionsAt40,
+      withContributionsAt50: response.expectedNetWorthWithContributionsAt50,
+      withContributionsAt60: response.expectedNetWorthWithContributionsAt60,
+      withContributionsAt65: response.expectedNetWorthWithContributionsAt65,
+    });
   }
 
   /**

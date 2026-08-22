@@ -1,5 +1,7 @@
 package com.isym444.networth.controller;
 
+import com.isym444.networth.dto.MonthlyContributionRequest;
+import com.isym444.networth.dto.MonthlyContributionResponse;
 import com.isym444.networth.dto.NetWorthHistoryResponse;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
 import com.isym444.networth.service.AmexInsightService;
@@ -16,12 +18,14 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class NetWorthControllerTest {
 
     @Test
     void history_delegatesToHistoryServiceWithTheRequestedCurrency() {
-        NetWorthHistoryResponse expected = new NetWorthHistoryResponse(List.of(), null, null, null, null, null);
+        NetWorthHistoryResponse expected =
+                new NetWorthHistoryResponse(List.of(), null, null, null, null, null, null, null, null, null, null);
         RecordingHistoryService historyService = new RecordingHistoryService(expected);
 
         NetWorthController controller = new NetWorthController(
@@ -37,6 +41,39 @@ class NetWorthControllerTest {
 
         assertEquals(200, response.getStatusCode().value());
         assertSame(expected, response.getBody());
+        assertEquals("GBP", historyService.receivedCurrency);
+    }
+
+    @Test
+    void updateMonthlyContribution_composesPersistedValueWithFreshHistoryProjections() {
+        // estimatedNetWorth1y and the with-contributions age fields both come from this
+        // fresh history fetch now, not from PortfolioProjectionService directly — nothing
+        // about the estimate is persisted, so there's nothing to go stale or miss a row.
+        NetWorthHistoryResponse freshHistory = new NetWorthHistoryResponse(
+                List.of(), 1.0, 2.0, 3.0, 4.0, 100.0, 200.0, 300.0, 400.0, 999.0, 50.0);
+        RecordingHistoryService historyService = new RecordingHistoryService(freshHistory);
+        PortfolioProjectionService portfolioProjectionService = mock(PortfolioProjectionService.class);
+        when(portfolioProjectionService.updateMonthlyContribution(50.0)).thenReturn(50.0);
+
+        NetWorthController controller = new NetWorthController(
+                mock(NetWorthSnapshotService.class),
+                historyService,
+                mock(NetWorthSnapshotRepository.class),
+                mock(ChartService.class),
+                mock(YnabTransactionService.class),
+                mock(AmexInsightService.class),
+                portfolioProjectionService);
+
+        ResponseEntity<MonthlyContributionResponse> response =
+                controller.updateMonthlyContribution(new MonthlyContributionRequest(50.0), "GBP");
+
+        MonthlyContributionResponse body = response.getBody();
+        assertEquals(50.0, body.monthlyContribution());
+        assertEquals(999.0, body.estimatedNetWorth1y());
+        assertEquals(100.0, body.expectedNetWorthWithContributionsAt40());
+        assertEquals(200.0, body.expectedNetWorthWithContributionsAt50());
+        assertEquals(300.0, body.expectedNetWorthWithContributionsAt60());
+        assertEquals(400.0, body.expectedNetWorthWithContributionsAt65());
         assertEquals("GBP", historyService.receivedCurrency);
     }
 

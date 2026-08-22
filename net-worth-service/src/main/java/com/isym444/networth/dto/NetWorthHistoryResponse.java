@@ -10,5 +10,10 @@ public record NetWorthHistoryResponse(
         Double expectedNetWorthAt50,
         Double expectedNetWorthAt60,
         Double expectedNetWorthAt65,
+        Double expectedNetWorthWithContributionsAt40,
+        Double expectedNetWorthWithContributionsAt50,
+        Double expectedNetWorthWithContributionsAt60,
+        Double expectedNetWorthWithContributionsAt65,
+        Double estimatedNetWorth1y,
         Double monthlyContribution) {
 }

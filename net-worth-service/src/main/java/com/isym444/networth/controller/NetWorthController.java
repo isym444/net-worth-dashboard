@@ -79,16 +79,27 @@ public class NetWorthController {
     }
 
     /**
-     * Persists the new monthly contribution default and returns the
-     * recalculated 1-year net worth estimate for the resolved currency, so
-     * the dashboard can update just that figure without a full reload.
+     * Persists the new monthly contribution default and returns the recalculated
+     * 1-year estimate plus the with-contributions net worth at 40/50/60/65, so the
+     * dashboard can update all of those figures from this single response instead
+     * of a full reload. Every one of those figures is computed fresh from a history
+     * fetch taken after the setting is persisted — none of it is stored anywhere,
+     * so there's nothing here that can go stale or miss a historical row.
      */
     @PostMapping("/settings/monthly-contribution")
     public ResponseEntity<MonthlyContributionResponse> updateMonthlyContribution(
             @RequestBody MonthlyContributionRequest request,
             @RequestParam(required = false) String currency) {
         double value = request.monthlyContribution() != null ? request.monthlyContribution() : 0.0;
-        return ResponseEntity.ok(portfolioProjectionService.updateMonthlyContribution(value, currency));
+        double persistedContribution = portfolioProjectionService.updateMonthlyContribution(value);
+        NetWorthHistoryResponse history = historyService.getHistory(currency);
+        return ResponseEntity.ok(new MonthlyContributionResponse(
+                persistedContribution,
+                history.estimatedNetWorth1y(),
+                history.expectedNetWorthWithContributionsAt40(),
+                history.expectedNetWorthWithContributionsAt50(),
+                history.expectedNetWorthWithContributionsAt60(),
+                history.expectedNetWorthWithContributionsAt65()));
     }
 
     @GetMapping(value = "/chart", produces = MediaType.IMAGE_PNG_VALUE)

@@ -115,10 +115,30 @@
           </strong>
         </div>
         <div class="stat-card">
+          <span>Net worth at 40 (2036, with contributions)</span>
+          <strong>
+            @if (proj.withContributionsAt40 !== null) {
+              {{ proj.withContributionsAt40 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            } @else {
+              —
+            }
+          </strong>
+        </div>
+        <div class="stat-card">
           <span>Net worth at 50 (2046)</span>
           <strong>
             @if (proj.at50 !== null) {
               {{ proj.at50 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            } @else {
+              —
+            }
+          </strong>
+        </div>
+        <div class="stat-card">
+          <span>Net worth at 50 (2046, with contributions)</span>
+          <strong>
+            @if (proj.withContributionsAt50 !== null) {
+              {{ proj.withContributionsAt50 | number: '1.2-2' }} {{ latestSnapshot.currency }}
             } @else {
               —
             }
@@ -135,10 +155,30 @@
           </strong>
         </div>
         <div class="stat-card">
+          <span>Net worth at 60 (2056, with contributions)</span>
+          <strong>
+            @if (proj.withContributionsAt60 !== null) {
+              {{ proj.withContributionsAt60 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            } @else {
+              —
+            }
+          </strong>
+        </div>
+        <div class="stat-card">
           <span>Net worth at 65 (2061)</span>
           <strong>
             @if (proj.at65 !== null) {
               {{ proj.at65 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            } @else {
+              —
+            }
+          </strong>
+        </div>
+        <div class="stat-card">
+          <span>Net worth at 65 (2061, with contributions)</span>
+          <strong>
+            @if (proj.withContributionsAt65 !== null) {
+              {{ proj.withContributionsAt65 | number: '1.2-2' }} {{ latestSnapshot.currency }}
             } @else {
               —
             }
@@ -152,8 +192,8 @@
         <h2>Estimated Net Worth in 1 Year</h2>
       </div>
       <strong class="projection-card__value">
-        @if (latestSnapshot.estimatedNetWorth1y !== null) {
-          {{ latestSnapshot.estimatedNetWorth1y | number: '1.2-2' }} {{ latestSnapshot.currency }}
+        @if (estimatedNetWorth1y() !== null) {
+          {{ estimatedNetWorth1y() | number: '1.2-2' }} {{ latestSnapshot.currency }}
         } @else {
           —
         }
