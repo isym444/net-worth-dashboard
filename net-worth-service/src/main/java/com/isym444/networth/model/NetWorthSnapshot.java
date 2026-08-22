@@ -63,6 +63,9 @@ public class NetWorthSnapshot {
     @Column(name = "`grand_total_JPY`")
     private Double grandTotalJpy;
 
+    @Column(name = "ai_commentary", columnDefinition = "text")
+    private String aiCommentary;
+
     public Long getId() {
         return id;
     }
@@ -181,5 +184,13 @@ public class NetWorthSnapshot {
 
     public void setGrandTotalJpy(Double grandTotalJpy) {
         this.grandTotalJpy = grandTotalJpy;
+    }
+
+    public String getAiCommentary() {
+        return aiCommentary;
+    }
+
+    public void setAiCommentary(String aiCommentary) {
+        this.aiCommentary = aiCommentary;
     }
 }
