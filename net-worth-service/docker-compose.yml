@@ -36,7 +36,7 @@ services:
       DASHBOARD_ACCESS_KEY: ${DASHBOARD_ACCESS_KEY:-}
       EXCHANGE_RATE_API_KEY: ${EXCHANGE_RATE_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:4200}
 
 volumes:
