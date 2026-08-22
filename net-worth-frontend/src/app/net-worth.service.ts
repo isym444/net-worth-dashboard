@@ -19,6 +19,7 @@ export interface NetWorthSnapshot {
   grandTotalUsd: number | null;
   grandTotalMxn: number | null;
   grandTotalJpy: number | null;
+  aiCommentary: string | null;
 }
 
 export interface NetWorthHistoryResponse {
@@ -27,6 +28,12 @@ export interface NetWorthHistoryResponse {
   expectedNetWorthAt50: number | null;
   expectedNetWorthAt60: number | null;
   expectedNetWorthAt65: number | null;
+}
+
+export interface AmexInsightsResponse {
+  commentary: string;
+  generatedAt: string;
+  transactionCount: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -43,6 +50,10 @@ export class NetWorthService {
 
   takeSnapshot(): Observable<NetWorthSnapshot[]> {
     return this.http.post<NetWorthSnapshot[]>(`${this.baseUrl}/api/v1/snapshot`, {});
+  }
+
+  refreshAmexInsights(): Observable<AmexInsightsResponse> {
+    return this.http.post<AmexInsightsResponse>(`${this.baseUrl}/api/v1/amex/insights`, {});
   }
 
   getChartBlob(currency?: string): Observable<Blob> {
