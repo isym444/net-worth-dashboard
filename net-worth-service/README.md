@@ -52,6 +52,7 @@ snapshots will fail with "No API keys configured".
 | `GET /api/v1/history?currency=GBP` | Snapshot history for a currency plus projected net worth at a few future ages. `currency` defaults to whichever currency has been logged. See response shape below. |
 | `GET /api/v1/chart?currency=GBP` | PNG line chart (Trading212 / Crypto.com / net worth) rendered from the history. |
 | `GET /api/v1/amex/transactions?days=30` | Recent transactions from any YNAB account with "amex" in its name, newest first. `days` defaults to 30. |
+| `POST /api/v1/amex/insights` | Fetch recent Amex transactions, ask Gemini to analyze them, and overwrite `ai_commentary` on the latest snapshot row for every currency. Returns `{"commentary": "...", "generatedAt": "...", "transactionCount": 12}`. Requires `GEMINI_API_KEY`. |
 | `GET /actuator/health` | Health check (used by Render) |
 
 `GET /api/v1/history` returns a JSON object, not a bare array:
@@ -105,6 +106,7 @@ curl http://localhost:8080/api/v1/history
 # => {"snapshots": [...], "expectedNetWorthAt40": ..., "expectedNetWorthAt50": ..., "expectedNetWorthAt60": ..., "expectedNetWorthAt65": ...}
 curl http://localhost:8080/api/v1/chart -o chart.png
 curl "http://localhost:8080/api/v1/amex/transactions?days=30"
+curl -X POST http://localhost:8080/api/v1/amex/insights
 ```
 
 ## Deploy to Render

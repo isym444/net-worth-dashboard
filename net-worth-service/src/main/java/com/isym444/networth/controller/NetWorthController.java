@@ -1,9 +1,11 @@
 package com.isym444.networth.controller;
 
+import com.isym444.networth.dto.AmexInsightsResponse;
 import com.isym444.networth.dto.AmexTransaction;
 import com.isym444.networth.dto.NetWorthHistoryResponse;
 import com.isym444.networth.model.NetWorthSnapshot;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
+import com.isym444.networth.service.AmexInsightService;
 import com.isym444.networth.service.ChartService;
 import com.isym444.networth.service.NetWorthHistoryService;
 import com.isym444.networth.service.NetWorthSnapshotService;
@@ -28,17 +30,20 @@ public class NetWorthController {
     private final NetWorthSnapshotRepository repository;
     private final ChartService chartService;
     private final YnabTransactionService ynabTransactionService;
+    private final AmexInsightService amexInsightService;
 
     public NetWorthController(NetWorthSnapshotService snapshotService,
                                NetWorthHistoryService historyService,
                                NetWorthSnapshotRepository repository,
                                ChartService chartService,
-                               YnabTransactionService ynabTransactionService) {
+                               YnabTransactionService ynabTransactionService,
+                               AmexInsightService amexInsightService) {
         this.snapshotService = snapshotService;
         this.historyService = historyService;
         this.repository = repository;
         this.chartService = chartService;
         this.ynabTransactionService = ynabTransactionService;
+        this.amexInsightService = amexInsightService;
     }
 
     /** Trigger a snapshot on demand (the same logic the daily cron job runs). */
@@ -55,6 +60,11 @@ public class NetWorthController {
     @GetMapping("/amex/transactions")
     public ResponseEntity<List<AmexTransaction>> amexTransactions(@RequestParam(defaultValue = "30") int days) {
         return ResponseEntity.ok(ynabTransactionService.getRecentAmexTransactions(days));
+    }
+
+    @PostMapping("/amex/insights")
+    public ResponseEntity<AmexInsightsResponse> refreshAmexInsights() {
+        return ResponseEntity.ok(amexInsightService.refreshAndPersist());
     }
 
     @GetMapping(value = "/chart", produces = MediaType.IMAGE_PNG_VALUE)
