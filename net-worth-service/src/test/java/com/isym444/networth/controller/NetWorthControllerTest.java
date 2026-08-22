@@ -2,6 +2,7 @@ package com.isym444.networth.controller;
 
 import com.isym444.networth.dto.NetWorthHistoryResponse;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
+import com.isym444.networth.service.AmexInsightService;
 import com.isym444.networth.service.ChartService;
 import com.isym444.networth.service.NetWorthHistoryService;
 import com.isym444.networth.service.NetWorthSnapshotService;
@@ -27,7 +28,8 @@ class NetWorthControllerTest {
                 historyService,
                 mock(NetWorthSnapshotRepository.class),
                 mock(ChartService.class),
-                mock(YnabTransactionService.class));
+                mock(YnabTransactionService.class),
+                mock(AmexInsightService.class));
 
         ResponseEntity<NetWorthHistoryResponse> response = controller.history("GBP");
 
