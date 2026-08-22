@@ -164,6 +164,33 @@
       "settingFollowRedirects": "global"
     },
     {
+      "_id": "req_amex_insights",
+      "_type": "request",
+      "parentId": "fld_net_worth_api",
+      "name": "Refresh Amex Insights",
+      "description": "Fetches recent Amex transactions, asks Gemini to analyze them, and overwrites ai_commentary on the latest snapshot row for every currency. Returns {commentary, generatedAt, transactionCount}. Requires GEMINI_API_KEY to be configured on the server.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/v1/amex/insights",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "X-Api-Key",
+          "value": "{{ _.apiKey }}",
+          "description": "Only required when DASHBOARD_ACCESS_KEY is set on the server (e.g. production)"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
       "_id": "req_chart",
       "_type": "request",
       "parentId": "fld_net_worth_api",
@@ -192,7 +219,7 @@
         }
       ],
       "authentication": {},
-      "metaSortKey": 3,
+      "metaSortKey": 4,
       "isPrivate": false,
       "settingStoreCookies": true,
       "settingSendCookies": true,
@@ -213,7 +240,7 @@
       "parameters": [],
       "headers": [],
       "authentication": {},
-      "metaSortKey": 4,
+      "metaSortKey": 5,
       "isPrivate": false,
       "settingStoreCookies": true,
       "settingSendCookies": true,

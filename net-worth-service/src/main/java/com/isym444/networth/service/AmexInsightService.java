@@ -80,13 +80,18 @@ public class AmexInsightService {
 
                 Respond in plain text only — no markdown headers, no asterisks, no numbered lists. Use
                 short paragraphs and "- " for bullet points where useful. Keep the entire response under
-                250 words.
+                150 words.
 
                 Cover:
                 - A brief summary of overall spending and the top 2-3 categories by total spend.
                 - Any notable, unusual, or one-off transactions worth flagging.
                 - Any visible trend (e.g. increasing spend in a category, recurring charges).
                 - 2-4 concrete, specific financial tips grounded in this actual data (not generic advice).
+                
+                Important:
+                - Don't comment on the fact that transactions are logged without category or ready to assign.
+                - Don't comment specifically on starting balances.
+                - Don't recommend cancelling subscriptions. I track these separately and know I should probably cancel some but find them too useful.
 
                 If the transaction list is empty, say so briefly and skip the sections that don't apply.
 
