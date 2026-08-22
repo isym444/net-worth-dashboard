@@ -146,6 +146,23 @@
         </div>
       }
     </section>
+
+    <section class="insights-card">
+      <div class="insights-card__header">
+        <h2>AI Spending Insights</h2>
+        <button (click)="refreshInsights()" [disabled]="refreshingInsights()">
+          @if (refreshingInsights()) {
+            <span class="spinner"></span>
+          }
+          {{ refreshingInsights() ? 'Analyzing…' : 'Refresh insights' }}
+        </button>
+      </div>
+      @if (latestSnapshot.aiCommentary) {
+        <p class="insights-card__text">{{ latestSnapshot.aiCommentary }}</p>
+      } @else {
+        <p class="muted">No insights yet. Click "Refresh insights" to generate one.</p>
+      }
+    </section>
   } @else {
     <p class="muted">No snapshots yet. Click "Take snapshot now" to get started.</p>
   }

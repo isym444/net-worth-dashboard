@@ -192,6 +192,65 @@ header button:disabled {
   border-radius: calc(var(--radius) - 4px);
 }
 
+.insights-card {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  animation: fade-in-up 240ms var(--ease-out) 40ms both;
+}
+
+.insights-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.insights-card__header h2 {
+  font-size: 1.1rem;
+  margin: 0;
+  color: var(--text);
+}
+
+.insights-card__header button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #05261b;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 160ms var(--ease-out);
+}
+
+.insights-card__header button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.insights-card__header button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.insights-card__header button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.insights-card__text {
+  white-space: pre-wrap;
+  color: var(--text);
+  line-height: 1.5;
+  margin: 0;
+}
+
 .table-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -256,6 +315,7 @@ tbody tr:hover {
 @media (prefers-reduced-motion: reduce) {
   :host,
   .headline,
+  .insights-card,
   .chart-card,
   .table-card,
   .error,
