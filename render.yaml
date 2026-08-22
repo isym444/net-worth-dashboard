@@ -39,6 +39,10 @@ services:
         sync: false
       - key: EXCHANGE_RATE_API_KEY
         sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
       - key: FRONTEND_ORIGIN
         value: https://net-worth-frontend-nt7d.onrender.com
 

@@ -36,6 +36,8 @@ data point.
 | `SNAPSHOT_ZONE` | no | Timezone for `SNAPSHOT_CRON`. Default `UTC` |
 | `PORT` | no | Listen port. Render sets this automatically |
 | `DASHBOARD_ACCESS_KEY` | no | Shared secret required in the `X-Api-Key` header on every `/api/**` request. Leave unset to disable auth entirely (e.g. local dev). |
+| `GEMINI_API_KEY` | no | Google Gemini API key, used to generate Amex spending insights (`POST /api/v1/amex/insights` and the daily cron snapshot). Get one at [Google AI Studio](https://aistudio.google.com/apikey). Leave unset to disable insight generation (manual refresh returns an error; snapshots still save, just without fresh commentary). |
+| `GEMINI_MODEL` | no | Gemini model id used for insight generation. Default `gemini-2.5-flash` |
 | `FRONTEND_ORIGIN` | no | Origin(s) allowed to call the API via CORS (comma-separated). Default `http://localhost:4200` for local `ng serve`. |
 
 Every credential is optional in isolation — leave a pair blank to skip that

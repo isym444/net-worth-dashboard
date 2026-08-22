@@ -66,6 +66,10 @@ networth:
     amex-account-ids: ${YNAB_AMEX_ACCOUNT_IDS:}
   exchange-rate:
     api-key: ${EXCHANGE_RATE_API_KEY:}
+  llm:
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_MODEL:gemini-2.5-flash}
 
 management:
   endpoint:
