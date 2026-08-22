@@ -24,22 +24,28 @@ public class NetWorthHistoryService {
     private static final double ANNUAL_GROWTH_RATE = 0.07;
 
     private final NetWorthSnapshotRepository repository;
+    private final PortfolioProjectionService portfolioProjectionService;
     private final Clock clock;
 
-    public NetWorthHistoryService(NetWorthSnapshotRepository repository, Clock clock) {
+    public NetWorthHistoryService(NetWorthSnapshotRepository repository,
+                                   PortfolioProjectionService portfolioProjectionService,
+                                   Clock clock) {
         this.repository = repository;
+        this.portfolioProjectionService = portfolioProjectionService;
         this.clock = clock;
     }
 
     public NetWorthHistoryResponse getHistory(String currency) {
+        double monthlyContribution = portfolioProjectionService.getMonthlyContribution();
+
         String resolved = resolveCurrency(currency);
         if (resolved == null) {
-            return new NetWorthHistoryResponse(List.of(), null, null, null, null);
+            return new NetWorthHistoryResponse(List.of(), null, null, null, null, monthlyContribution);
         }
 
         List<NetWorthSnapshot> snapshots = repository.findByCurrencyOrderByTimestampAsc(resolved);
         if (snapshots.isEmpty()) {
-            return new NetWorthHistoryResponse(List.of(), null, null, null, null);
+            return new NetWorthHistoryResponse(List.of(), null, null, null, null, monthlyContribution);
         }
 
         double baseline = snapshots.get(snapshots.size() - 1).getGrandTotal();
@@ -49,7 +55,8 @@ public class NetWorthHistoryService {
                 projectedValue(baseline, yearsRemaining(now, 40)),
                 projectedValue(baseline, yearsRemaining(now, 50)),
                 projectedValue(baseline, yearsRemaining(now, 60)),
-                projectedValue(baseline, yearsRemaining(now, 65)));
+                projectedValue(baseline, yearsRemaining(now, 65)),
+                monthlyContribution);
     }
 
     // Assumes a single-currency dataset: with no ?currency= param, falls back to

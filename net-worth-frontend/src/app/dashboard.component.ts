@@ -25,6 +25,8 @@ export class DashboardComponent implements OnInit {
   protected readonly takingSnapshot = signal(false);
   protected readonly refreshingInsights = signal(false);
   protected readonly chartUrl = signal<string | null>(null);
+  protected readonly monthlyContributionInput = signal(0);
+  protected readonly updatingContribution = signal(false);
 
   protected readonly latest = computed<NetWorthSnapshot | null>(() => {
     const list = this.snapshots();
@@ -54,6 +56,7 @@ export class DashboardComponent implements OnInit {
           at60: data.expectedNetWorthAt60,
           at65: data.expectedNetWorthAt65,
         });
+        this.monthlyContributionInput.set(data.monthlyContribution ?? 0);
         this.loading.set(false);
       },
       error: (err: unknown) => {
@@ -99,6 +102,40 @@ export class DashboardComponent implements OnInit {
         this.error.set(this.extractError(err));
       },
     });
+  }
+
+  /** Persists the new monthly contribution and patches just the latest snapshot's estimate in place. */
+  updateMonthlyContribution(rawValue: string): void {
+    const value = Number(rawValue);
+    if (!Number.isFinite(value) || value < 0) {
+      this.error.set('Monthly contribution must be a non-negative number.');
+      return;
+    }
+
+    this.updatingContribution.set(true);
+    this.error.set(null);
+    this.netWorthService.updateMonthlyContribution(value).subscribe({
+      next: (response) => {
+        this.updatingContribution.set(false);
+        this.monthlyContributionInput.set(response.monthlyContribution);
+        this.patchLatestEstimatedNetWorth1y(response.estimatedNetWorth1y);
+      },
+      error: (err: unknown) => {
+        this.updatingContribution.set(false);
+        this.error.set(this.extractError(err));
+      },
+    });
+  }
+
+  private patchLatestEstimatedNetWorth1y(estimatedNetWorth1y: number | null): void {
+    const list = this.snapshots();
+    if (list.length === 0) {
+      return;
+    }
+    const lastIndex = list.length - 1;
+    const updated = [...list];
+    updated[lastIndex] = { ...updated[lastIndex], estimatedNetWorth1y };
+    this.snapshots.set(updated);
   }
 
   /**

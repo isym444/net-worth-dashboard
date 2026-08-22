@@ -147,6 +147,39 @@
       }
     </section>
 
+    <section class="projection-card">
+      <div class="projection-card__header">
+        <h2>Estimated Net Worth in 1 Year</h2>
+      </div>
+      <strong class="projection-card__value">
+        @if (latestSnapshot.estimatedNetWorth1y !== null) {
+          {{ latestSnapshot.estimatedNetWorth1y | number: '1.2-2' }} {{ latestSnapshot.currency }}
+        } @else {
+          —
+        }
+      </strong>
+      <div class="projection-card__controls">
+        <label for="monthly-contribution">Monthly contribution ({{ latestSnapshot.currency }})</label>
+        <input
+          id="monthly-contribution"
+          type="number"
+          min="0"
+          step="1"
+          [value]="monthlyContributionInput()"
+          #contributionInput
+        />
+        <button
+          (click)="updateMonthlyContribution(contributionInput.value)"
+          [disabled]="updatingContribution()"
+        >
+          @if (updatingContribution()) {
+            <span class="spinner"></span>
+          }
+          {{ updatingContribution() ? 'Updating…' : 'Update' }}
+        </button>
+      </div>
+    </section>
+
     <section class="insights-card">
       <div class="insights-card__header">
         <h2>AI Spending Insights</h2>

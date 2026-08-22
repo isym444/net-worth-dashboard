@@ -21,7 +21,8 @@ import static org.mockito.Mockito.when;
 class NetWorthHistoryServiceTest {
 
     private final NetWorthHistoryService service =
-            new NetWorthHistoryService(mock(NetWorthSnapshotRepository.class), Clock.systemUTC());
+            new NetWorthHistoryService(mock(NetWorthSnapshotRepository.class),
+                    mock(PortfolioProjectionService.class), Clock.systemUTC());
 
     @Test
     void yearsRemaining_returnsZero_whenNowIsExactlyTheTargetBirthday() {
@@ -71,7 +72,8 @@ class NetWorthHistoryServiceTest {
         // this same fixed date, rather than assuming a hand-computed round number.
         LocalDate fixedToday = LocalDate.of(1996, 6, 14);
         Clock fixedClock = Clock.fixed(fixedToday.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
-        NetWorthHistoryService service = new NetWorthHistoryService(repository, fixedClock);
+        NetWorthHistoryService service =
+                new NetWorthHistoryService(repository, mock(PortfolioProjectionService.class), fixedClock);
 
         NetWorthHistoryResponse response = service.getHistory("GBP");
 
@@ -93,7 +95,8 @@ class NetWorthHistoryServiceTest {
         when(repository.findDistinctCurrencies()).thenReturn(List.of("EUR", "GBP"));
         when(repository.findByCurrencyOrderByTimestampAsc("EUR"))
                 .thenReturn(List.of(snapshotWithGrandTotal(500.0)));
-        NetWorthHistoryService service = new NetWorthHistoryService(repository, Clock.systemUTC());
+        NetWorthHistoryService service =
+                new NetWorthHistoryService(repository, mock(PortfolioProjectionService.class), Clock.systemUTC());
 
         NetWorthHistoryResponse response = service.getHistory(null);
 
@@ -105,7 +108,8 @@ class NetWorthHistoryServiceTest {
     void getHistory_returnsEmptyResponse_whenNoCurrenciesExist() {
         NetWorthSnapshotRepository repository = mock(NetWorthSnapshotRepository.class);
         when(repository.findDistinctCurrencies()).thenReturn(List.of());
-        NetWorthHistoryService service = new NetWorthHistoryService(repository, Clock.systemUTC());
+        NetWorthHistoryService service =
+                new NetWorthHistoryService(repository, mock(PortfolioProjectionService.class), Clock.systemUTC());
 
         NetWorthHistoryResponse response = service.getHistory(null);
 
@@ -121,7 +125,8 @@ class NetWorthHistoryServiceTest {
     void getHistory_returnsEmptyResponse_whenCurrencyHasNoSnapshots() {
         NetWorthSnapshotRepository repository = mock(NetWorthSnapshotRepository.class);
         when(repository.findByCurrencyOrderByTimestampAsc("GBP")).thenReturn(List.of());
-        NetWorthHistoryService service = new NetWorthHistoryService(repository, Clock.systemUTC());
+        NetWorthHistoryService service =
+                new NetWorthHistoryService(repository, mock(PortfolioProjectionService.class), Clock.systemUTC());
 
         NetWorthHistoryResponse response = service.getHistory("GBP");
 

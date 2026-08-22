@@ -2,6 +2,8 @@ package com.isym444.networth.controller;
 
 import com.isym444.networth.dto.AmexInsightsResponse;
 import com.isym444.networth.dto.AmexTransaction;
+import com.isym444.networth.dto.MonthlyContributionRequest;
+import com.isym444.networth.dto.MonthlyContributionResponse;
 import com.isym444.networth.dto.NetWorthHistoryResponse;
 import com.isym444.networth.model.NetWorthSnapshot;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
@@ -9,11 +11,13 @@ import com.isym444.networth.service.AmexInsightService;
 import com.isym444.networth.service.ChartService;
 import com.isym444.networth.service.NetWorthHistoryService;
 import com.isym444.networth.service.NetWorthSnapshotService;
+import com.isym444.networth.service.PortfolioProjectionService;
 import com.isym444.networth.service.YnabTransactionService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,19 +35,22 @@ public class NetWorthController {
     private final ChartService chartService;
     private final YnabTransactionService ynabTransactionService;
     private final AmexInsightService amexInsightService;
+    private final PortfolioProjectionService portfolioProjectionService;
 
     public NetWorthController(NetWorthSnapshotService snapshotService,
                                NetWorthHistoryService historyService,
                                NetWorthSnapshotRepository repository,
                                ChartService chartService,
                                YnabTransactionService ynabTransactionService,
-                               AmexInsightService amexInsightService) {
+                               AmexInsightService amexInsightService,
+                               PortfolioProjectionService portfolioProjectionService) {
         this.snapshotService = snapshotService;
         this.historyService = historyService;
         this.repository = repository;
         this.chartService = chartService;
         this.ynabTransactionService = ynabTransactionService;
         this.amexInsightService = amexInsightService;
+        this.portfolioProjectionService = portfolioProjectionService;
     }
 
     /**
@@ -69,6 +76,19 @@ public class NetWorthController {
     @PostMapping("/amex/insights")
     public ResponseEntity<AmexInsightsResponse> refreshAmexInsights() {
         return ResponseEntity.ok(amexInsightService.refreshAndPersist());
+    }
+
+    /**
+     * Persists the new monthly contribution default and returns the
+     * recalculated 1-year net worth estimate for the resolved currency, so
+     * the dashboard can update just that figure without a full reload.
+     */
+    @PostMapping("/settings/monthly-contribution")
+    public ResponseEntity<MonthlyContributionResponse> updateMonthlyContribution(
+            @RequestBody MonthlyContributionRequest request,
+            @RequestParam(required = false) String currency) {
+        double value = request.monthlyContribution() != null ? request.monthlyContribution() : 0.0;
+        return ResponseEntity.ok(portfolioProjectionService.updateMonthlyContribution(value, currency));
     }
 
     @GetMapping(value = "/chart", produces = MediaType.IMAGE_PNG_VALUE)

@@ -6,6 +6,7 @@ import com.isym444.networth.service.AmexInsightService;
 import com.isym444.networth.service.ChartService;
 import com.isym444.networth.service.NetWorthHistoryService;
 import com.isym444.networth.service.NetWorthSnapshotService;
+import com.isym444.networth.service.PortfolioProjectionService;
 import com.isym444.networth.service.YnabTransactionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ class NetWorthControllerTest {
 
     @Test
     void history_delegatesToHistoryServiceWithTheRequestedCurrency() {
-        NetWorthHistoryResponse expected = new NetWorthHistoryResponse(List.of(), null, null, null, null);
+        NetWorthHistoryResponse expected = new NetWorthHistoryResponse(List.of(), null, null, null, null, null);
         RecordingHistoryService historyService = new RecordingHistoryService(expected);
 
         NetWorthController controller = new NetWorthController(
@@ -29,7 +30,8 @@ class NetWorthControllerTest {
                 mock(NetWorthSnapshotRepository.class),
                 mock(ChartService.class),
                 mock(YnabTransactionService.class),
-                mock(AmexInsightService.class));
+                mock(AmexInsightService.class),
+                mock(PortfolioProjectionService.class));
 
         ResponseEntity<NetWorthHistoryResponse> response = controller.history("GBP");
 
@@ -52,7 +54,7 @@ class NetWorthControllerTest {
         private String receivedCurrency;
 
         RecordingHistoryService(NetWorthHistoryResponse response) {
-            super(null, null);
+            super(null, null, null);
             this.response = response;
         }
 
