@@ -23,6 +23,7 @@ export class DashboardComponent implements OnInit {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly takingSnapshot = signal(false);
+  protected readonly refreshingInsights = signal(false);
   protected readonly chartUrl = signal<string | null>(null);
 
   protected readonly latest = computed<NetWorthSnapshot | null>(() => {
@@ -80,6 +81,21 @@ export class DashboardComponent implements OnInit {
       },
       error: (err: unknown) => {
         this.takingSnapshot.set(false);
+        this.error.set(this.extractError(err));
+      },
+    });
+  }
+
+  refreshInsights(): void {
+    this.refreshingInsights.set(true);
+    this.error.set(null);
+    this.netWorthService.refreshAmexInsights().subscribe({
+      next: () => {
+        this.refreshingInsights.set(false);
+        this.loadHistory(false);
+      },
+      error: (err: unknown) => {
+        this.refreshingInsights.set(false);
         this.error.set(this.extractError(err));
       },
     });
