@@ -48,7 +48,7 @@ snapshots will fail with "No API keys configured".
 
 | Endpoint | Description |
 |---|---|
-| `POST /api/v1/snapshot` | Fetch balances right now and save a row (same logic the cron job runs). Returns the saved row(s) as JSON. |
+| `POST /api/v1/snapshot` | Fetch balances right now and save a row (same logic the cron job runs), except it copies the previous row's AI commentary forward instead of regenerating it — only the cron job calls the LLM. Returns the saved row(s) as JSON. |
 | `GET /api/v1/history?currency=GBP` | Snapshot history for a currency plus projected net worth at a few future ages. `currency` defaults to whichever currency has been logged. See response shape below. |
 | `GET /api/v1/chart?currency=GBP` | PNG line chart (Trading212 / Crypto.com / net worth) rendered from the history. |
 | `GET /api/v1/amex/transactions?days=30` | Recent transactions from any YNAB account with "amex" in its name, newest first. `days` defaults to 30. |
@@ -95,6 +95,7 @@ export CRYPTO_COM_SECRET=...
 export YNAB_API_TOKEN=...
 export YNAB_CHASE_ACCOUNT_IDS=...
 export YNAB_AMEX_ACCOUNT_IDS=...
+export GEMINI_API_KEY=...
 docker compose up --build
 ```
 

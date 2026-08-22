@@ -8,6 +8,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.time.Duration;
 import java.util.List;
@@ -49,11 +50,15 @@ public class GeminiClient {
                     .retrieve()
                     .body(JsonNode.class);
         } catch (RestClientException e) {
-            // Do not log/rethrow the original exception or its message: it typically
-            // embeds the full request URI (including the API key query parameter), and
-            // standard SLF4J/Logback exception logging would print that verbatim.
-            log.error("Gemini request failed (details suppressed to avoid logging credential in URL)");
-            throw new IllegalStateException("Gemini API request failed");
+            // Never log the exception object or its message — it embeds the request URI,
+            // API key included. The HTTP status code alone is safe and is the only
+            // diagnostic signal surfaced.
+            String detail = (e instanceof RestClientResponseException re)
+                    ? "HTTP " + re.getStatusCode().value()
+                    : "network/timeout error";
+            log.error("Gemini request failed ({}); further details suppressed to avoid "
+                    + "logging the credential in the request URL", detail);
+            throw new IllegalStateException("Gemini API request failed (" + detail + ")");
         }
 
         String text = response == null

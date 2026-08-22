@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -67,7 +68,8 @@ public class AmexInsightService {
     private String buildPrompt(List<AmexTransaction> transactions) {
         String json;
         try {
-            json = objectMapper.writeValueAsString(transactions);
+            json = objectMapper.writeValueAsString(
+                    transactions.stream().map(PromptTransaction::from).toList());
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize transactions for the LLM prompt", e);
         }
@@ -90,5 +92,20 @@ public class AmexInsightService {
 
                 Transactions (JSON):
                 """ + json;
+    }
+
+    /**
+     * Mirrors {@link AmexTransaction} but negates the amount so it matches the sign convention
+     * described in the prompt text (positive = money spent). YNAB itself represents outflows as
+     * negative amounts, and {@link AmexTransaction} preserves that raw YNAB sign for its other
+     * consumers (e.g. the {@code /api/v1/amex/transactions} endpoint), so the negation is applied
+     * only here, at the point where the data is serialized for the LLM prompt.
+     */
+    private record PromptTransaction(LocalDate date, String payeeName, String categoryName,
+                                      double amount, String memo, String accountName) {
+        static PromptTransaction from(AmexTransaction t) {
+            return new PromptTransaction(t.date(), t.payeeName(), t.categoryName(),
+                    -t.amount(), t.memo(), t.accountName());
+        }
     }
 }

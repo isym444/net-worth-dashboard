@@ -46,7 +46,11 @@ public class NetWorthController {
         this.amexInsightService = amexInsightService;
     }
 
-    /** Trigger a snapshot on demand (the same logic the daily cron job runs). */
+    /**
+     * Trigger a snapshot on demand (the same logic the daily cron job runs), except this
+     * copies the previous row's AI commentary forward instead of regenerating it — only the
+     * scheduled cron job calls the LLM.
+     */
     @PostMapping("/snapshot")
     public ResponseEntity<List<NetWorthSnapshot>> takeSnapshot() {
         return ResponseEntity.ok(snapshotService.takeSnapshot());
