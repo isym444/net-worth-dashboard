@@ -51,8 +51,9 @@ public class OpenWearablesClient {
         JsonNode activity = get(activityUri(baseUrl, userId, startDate, endDate), apiKey);
         JsonNode healthScores = get(healthScoresUri(baseUrl, userId, startDate, endDate), apiKey);
         JsonNode body = get(bodyUri(baseUrl, userId), apiKey);
+        JsonNode workouts = get(workoutsUri(baseUrl, userId, startDate, endDate), apiKey);
 
-        return new HealthSnapshotData(activity.path("data"), healthScores.path("data"), body);
+        return new HealthSnapshotData(activity.path("data"), healthScores.path("data"), body, workouts.path("data"));
     }
 
     /**
@@ -72,6 +73,11 @@ public class OpenWearablesClient {
 
     String bodyUri(String baseUrl, String userId) {
         return baseUrl + "/users/" + userId + "/summaries/body";
+    }
+
+    String workoutsUri(String baseUrl, String userId, LocalDate startDate, LocalDate endDate) {
+        return baseUrl + "/users/" + userId + "/events/workouts"
+                + "?start_date=" + startDate + "&end_date=" + endDate;
     }
 
     private JsonNode get(String uri, String apiKey) {

@@ -111,7 +111,8 @@ public class HealthInsightService {
                 You are a concise personal health analyst. Below is JSON with the user's last 30 days of
                 wearable-tracked health data: "activitySummaries" (daily steps/distance/calories/active
                 minutes), "healthScores" (daily sleep/recovery/readiness scores from their wearable),
-                and "bodySummary" (their most recent weight/body composition/vitals).
+                "bodySummary" (their most recent weight/body composition/vitals), and "workouts" (logged
+                exercise sessions with type, duration, and intensity where available).
 
                 Respond in plain text only — no markdown headers, no asterisks, no numbered lists. Use
                 short paragraphs and "- " for bullet points where useful. Keep the entire response under

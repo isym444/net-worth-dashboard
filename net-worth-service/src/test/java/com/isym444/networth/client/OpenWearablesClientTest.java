@@ -40,4 +40,13 @@ class OpenWearablesClientTest {
 
         assertEquals("https://wearables.example.com/api/v1/users/user-1/summaries/body", uri);
     }
+
+    @Test
+    void workoutsUri_doesNotDuplicateTheApiVersionSegmentAlreadyInBaseUrl() {
+        String uri = client.workoutsUri("https://wearables.example.com/api/v1", "user-1",
+                LocalDate.parse("2026-07-24"), LocalDate.parse("2026-08-23"));
+
+        assertEquals("https://wearables.example.com/api/v1/users/user-1/events/workouts"
+                + "?start_date=2026-07-24&end_date=2026-08-23", uri);
+    }
 }
