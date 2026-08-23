@@ -159,7 +159,8 @@ class HealthInsightServiceTest {
         JsonNode activity = parse("[{\"date\":\"2026-08-22\",\"steps\":" + steps + "}]");
         JsonNode healthScores = parse("[{\"category\":\"sleep\",\"value\":82}]");
         JsonNode body = parse("{\"slow_changing\":{\"weight_kg\":72.5}}");
-        return new HealthSnapshotData(activity, healthScores, body);
+        JsonNode workouts = parse("[]");
+        return new HealthSnapshotData(activity, healthScores, body, workouts);
     }
 
     private JsonNode parse(String json) {
