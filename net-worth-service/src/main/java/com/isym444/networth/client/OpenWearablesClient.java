@@ -45,7 +45,7 @@ public class OpenWearablesClient {
                     "Open Wearables is not configured (missing user id) — set OPEN_WEARABLES_USER_ID.");
         }
 
-        LocalDate endDate = LocalDate.now(ZoneOffset.UTC);
+        LocalDate endDate = LocalDate.now(ZoneOffset.UTC).plusDays(1);
         LocalDate startDate = endDate.minusDays(30);
 
         JsonNode activity = get(activityUri(baseUrl, userId, startDate, endDate), apiKey);
