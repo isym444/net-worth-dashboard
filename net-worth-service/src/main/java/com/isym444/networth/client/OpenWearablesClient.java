@@ -52,6 +52,7 @@ public class OpenWearablesClient {
         JsonNode healthScores = get(healthScoresUri(baseUrl, userId, startDate, endDate), apiKey);
         JsonNode body = get(bodyUri(baseUrl, userId), apiKey);
         JsonNode workouts = get(workoutsUri(baseUrl, userId, startDate, endDate), apiKey);
+        log.info("Workout details: {}", workouts);
 
         return new HealthSnapshotData(activity.path("data"), healthScores.path("data"), body, workouts.path("data"));
     }

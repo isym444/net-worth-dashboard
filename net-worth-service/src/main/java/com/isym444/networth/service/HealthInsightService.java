@@ -75,7 +75,7 @@ public class HealthInsightService {
     /** Generates fresh commentary without persisting it anywhere. */
     public String generateCommentary() {
         HealthSnapshotData data = openWearablesClient.fetchLast30Days(wearablesBaseUrl, wearablesUserId, wearablesApiKey);
-        log.info("Raw open wearables data: ", data);
+        log.info("Raw open wearables data: {}", data);
         return geminiClient.generateContent(geminiModel, buildPrompt(data), geminiApiKey);
     }
 
