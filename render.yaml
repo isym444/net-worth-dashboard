@@ -43,6 +43,16 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: gemini-3.6-flash
+      - key: OPEN_WEARABLES_BASE_URL
+        sync: false
+      - key: OPEN_WEARABLES_API_KEY
+        sync: false
+      - key: OPEN_WEARABLES_USER_ID
+        sync: false
+      - key: HEALTH_INSIGHT_CRON
+        value: "0 0 7 * * *"
+      - key: HEALTH_INSIGHT_ZONE
+        value: UTC
       - key: FRONTEND_ORIGIN
         value: https://net-worth-frontend-nt7d.onrender.com
 

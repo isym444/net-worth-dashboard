@@ -2,6 +2,7 @@ package com.isym444.networth.controller;
 
 import com.isym444.networth.dto.AmexInsightsResponse;
 import com.isym444.networth.dto.AmexTransaction;
+import com.isym444.networth.dto.HealthInsightResponse;
 import com.isym444.networth.dto.MonthlyContributionRequest;
 import com.isym444.networth.dto.MonthlyContributionResponse;
 import com.isym444.networth.dto.NetWorthHistoryResponse;
@@ -9,6 +10,7 @@ import com.isym444.networth.model.NetWorthSnapshot;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
 import com.isym444.networth.service.AmexInsightService;
 import com.isym444.networth.service.ChartService;
+import com.isym444.networth.service.HealthInsightService;
 import com.isym444.networth.service.NetWorthHistoryService;
 import com.isym444.networth.service.NetWorthSnapshotService;
 import com.isym444.networth.service.PortfolioProjectionService;
@@ -36,6 +38,7 @@ public class NetWorthController {
     private final YnabTransactionService ynabTransactionService;
     private final AmexInsightService amexInsightService;
     private final PortfolioProjectionService portfolioProjectionService;
+    private final HealthInsightService healthInsightService;
 
     public NetWorthController(NetWorthSnapshotService snapshotService,
                                NetWorthHistoryService historyService,
@@ -43,7 +46,8 @@ public class NetWorthController {
                                ChartService chartService,
                                YnabTransactionService ynabTransactionService,
                                AmexInsightService amexInsightService,
-                               PortfolioProjectionService portfolioProjectionService) {
+                               PortfolioProjectionService portfolioProjectionService,
+                               HealthInsightService healthInsightService) {
         this.snapshotService = snapshotService;
         this.historyService = historyService;
         this.repository = repository;
@@ -51,6 +55,7 @@ public class NetWorthController {
         this.ynabTransactionService = ynabTransactionService;
         this.amexInsightService = amexInsightService;
         this.portfolioProjectionService = portfolioProjectionService;
+        this.healthInsightService = healthInsightService;
     }
 
     /**
@@ -76,6 +81,20 @@ public class NetWorthController {
     @PostMapping("/amex/insights")
     public ResponseEntity<AmexInsightsResponse> refreshAmexInsights() {
         return ResponseEntity.ok(amexInsightService.refreshAndPersist());
+    }
+
+    /** Returns whatever the daily cron last cached — never calls the LLM. */
+    @GetMapping("/health/insight")
+    public ResponseEntity<HealthInsightResponse> getHealthInsight() {
+        return healthInsightService.getLatest()
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    /** Manual refresh button on the health insights card — calls the LLM fresh, unlike /snapshot. */
+    @PostMapping("/health/insight/refresh")
+    public ResponseEntity<HealthInsightResponse> refreshHealthInsight() {
+        return ResponseEntity.ok(healthInsightService.refreshAndPersist());
     }
 
     /**

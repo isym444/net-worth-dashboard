@@ -2,7 +2,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { daysUntilPaycheck, nextPaycheckDate } from './bank-holidays';
 import { environment } from '../environments/environment';
-import { MonthlyContributionResponse, NetWorthService, NetWorthSnapshot } from './net-worth.service';
+import { HealthInsightResponse, MonthlyContributionResponse, NetWorthService, NetWorthSnapshot } from './net-worth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -29,6 +29,8 @@ export class DashboardComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly takingSnapshot = signal(false);
   protected readonly refreshingInsights = signal(false);
+  protected readonly healthInsight = signal<HealthInsightResponse | null>(null);
+  protected readonly refreshingHealthInsight = signal(false);
   protected readonly chartUrl = signal<string | null>(null);
   protected readonly monthlyContributionInput = signal(0);
   protected readonly updatingContribution = signal(false);
@@ -45,6 +47,7 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.loadHistory();
     this.loadChart();
+    this.loadHealthInsight();
   }
 
   loadHistory(showLoadingState = true): void {
@@ -109,6 +112,30 @@ export class DashboardComponent implements OnInit {
       },
       error: (err: unknown) => {
         this.refreshingInsights.set(false);
+        this.error.set(this.extractError(err));
+      },
+    });
+  }
+
+  /** Loads whatever the daily cron last cached — never triggers an LLM call. */
+  loadHealthInsight(): void {
+    this.netWorthService.getHealthInsight().subscribe({
+      next: (data) => this.healthInsight.set(data),
+      error: () => this.healthInsight.set(null),
+    });
+  }
+
+  /** Manual refresh button — the only other path (besides the daily cron) that calls the LLM. */
+  refreshHealthInsight(): void {
+    this.refreshingHealthInsight.set(true);
+    this.error.set(null);
+    this.netWorthService.refreshHealthInsight().subscribe({
+      next: (data) => {
+        this.refreshingHealthInsight.set(false);
+        this.healthInsight.set(data);
+      },
+      error: (err: unknown) => {
+        this.refreshingHealthInsight.set(false);
         this.error.set(this.extractError(err));
       },
     });

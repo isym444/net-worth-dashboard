@@ -70,6 +70,14 @@ networth:
     gemini:
       api-key: ${GEMINI_API_KEY:}
       model: ${GEMINI_MODEL:gemini-3.6-flash}
+  wearables:
+    base-url: ${OPEN_WEARABLES_BASE_URL:}
+    api-key: ${OPEN_WEARABLES_API_KEY:}
+    user-id: ${OPEN_WEARABLES_USER_ID:}
+  health:
+    insight:
+      cron: "${HEALTH_INSIGHT_CRON:0 0 7 * * *}"
+      zone: "${HEALTH_INSIGHT_ZONE:UTC}"
 
 management:
   endpoint:

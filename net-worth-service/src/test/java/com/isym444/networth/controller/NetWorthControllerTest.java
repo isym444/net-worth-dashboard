@@ -1,11 +1,13 @@
 package com.isym444.networth.controller;
 
+import com.isym444.networth.dto.HealthInsightResponse;
 import com.isym444.networth.dto.MonthlyContributionRequest;
 import com.isym444.networth.dto.MonthlyContributionResponse;
 import com.isym444.networth.dto.NetWorthHistoryResponse;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
 import com.isym444.networth.service.AmexInsightService;
 import com.isym444.networth.service.ChartService;
+import com.isym444.networth.service.HealthInsightService;
 import com.isym444.networth.service.NetWorthHistoryService;
 import com.isym444.networth.service.NetWorthSnapshotService;
 import com.isym444.networth.service.PortfolioProjectionService;
@@ -13,9 +15,12 @@ import com.isym444.networth.service.YnabTransactionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -35,7 +40,8 @@ class NetWorthControllerTest {
                 mock(ChartService.class),
                 mock(YnabTransactionService.class),
                 mock(AmexInsightService.class),
-                mock(PortfolioProjectionService.class));
+                mock(PortfolioProjectionService.class),
+                mock(HealthInsightService.class));
 
         ResponseEntity<NetWorthHistoryResponse> response = controller.history("GBP");
 
@@ -62,7 +68,8 @@ class NetWorthControllerTest {
                 mock(ChartService.class),
                 mock(YnabTransactionService.class),
                 mock(AmexInsightService.class),
-                portfolioProjectionService);
+                portfolioProjectionService,
+                mock(HealthInsightService.class));
 
         ResponseEntity<MonthlyContributionResponse> response =
                 controller.updateMonthlyContribution(new MonthlyContributionRequest(50.0), "GBP");
@@ -75,6 +82,74 @@ class NetWorthControllerTest {
         assertEquals(300.0, body.expectedNetWorthWithContributionsAt60());
         assertEquals(400.0, body.expectedNetWorthWithContributionsAt65());
         assertEquals("GBP", historyService.receivedCurrency);
+    }
+
+    @Test
+    void getHealthInsight_returnsOkWithBody_whenACachedInsightExists() {
+        HealthInsightService healthInsightService = mock(HealthInsightService.class);
+        Instant generatedAt = Instant.parse("2026-08-23T07:00:00Z");
+        when(healthInsightService.getLatest())
+                .thenReturn(Optional.of(new HealthInsightResponse("Great week overall.", generatedAt)));
+
+        NetWorthController controller = new NetWorthController(
+                mock(NetWorthSnapshotService.class),
+                mock(NetWorthHistoryService.class),
+                mock(NetWorthSnapshotRepository.class),
+                mock(ChartService.class),
+                mock(YnabTransactionService.class),
+                mock(AmexInsightService.class),
+                mock(PortfolioProjectionService.class),
+                healthInsightService);
+
+        ResponseEntity<HealthInsightResponse> response = controller.getHealthInsight();
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("Great week overall.", response.getBody().commentary());
+        assertEquals(generatedAt, response.getBody().generatedAt());
+    }
+
+    @Test
+    void getHealthInsight_returnsNoContent_whenNoInsightHasBeenGeneratedYet() {
+        HealthInsightService healthInsightService = mock(HealthInsightService.class);
+        when(healthInsightService.getLatest()).thenReturn(Optional.empty());
+
+        NetWorthController controller = new NetWorthController(
+                mock(NetWorthSnapshotService.class),
+                mock(NetWorthHistoryService.class),
+                mock(NetWorthSnapshotRepository.class),
+                mock(ChartService.class),
+                mock(YnabTransactionService.class),
+                mock(AmexInsightService.class),
+                mock(PortfolioProjectionService.class),
+                healthInsightService);
+
+        ResponseEntity<HealthInsightResponse> response = controller.getHealthInsight();
+
+        assertEquals(204, response.getStatusCode().value());
+        assertNull(response.getBody());
+    }
+
+    @Test
+    void refreshHealthInsight_delegatesToServiceAndReturnsItsResult() {
+        HealthInsightService healthInsightService = mock(HealthInsightService.class);
+        Instant generatedAt = Instant.parse("2026-08-23T09:15:00Z");
+        HealthInsightResponse expected = new HealthInsightResponse("Fresh commentary.", generatedAt);
+        when(healthInsightService.refreshAndPersist()).thenReturn(expected);
+
+        NetWorthController controller = new NetWorthController(
+                mock(NetWorthSnapshotService.class),
+                mock(NetWorthHistoryService.class),
+                mock(NetWorthSnapshotRepository.class),
+                mock(ChartService.class),
+                mock(YnabTransactionService.class),
+                mock(AmexInsightService.class),
+                mock(PortfolioProjectionService.class),
+                healthInsightService);
+
+        ResponseEntity<HealthInsightResponse> response = controller.refreshHealthInsight();
+
+        assertEquals(200, response.getStatusCode().value());
+        assertSame(expected, response.getBody());
     }
 
     /**

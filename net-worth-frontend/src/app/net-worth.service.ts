@@ -42,6 +42,11 @@ export interface AmexInsightsResponse {
   transactionCount: number;
 }
 
+export interface HealthInsightResponse {
+  commentary: string;
+  generatedAt: string;
+}
+
 export interface MonthlyContributionResponse {
   monthlyContribution: number;
   estimatedNetWorth1y: number | null;
@@ -69,6 +74,14 @@ export class NetWorthService {
 
   refreshAmexInsights(): Observable<AmexInsightsResponse> {
     return this.http.post<AmexInsightsResponse>(`${this.baseUrl}/api/v1/amex/insights`, {});
+  }
+
+  getHealthInsight(): Observable<HealthInsightResponse | null> {
+    return this.http.get<HealthInsightResponse | null>(`${this.baseUrl}/api/v1/health/insight`);
+  }
+
+  refreshHealthInsight(): Observable<HealthInsightResponse> {
+    return this.http.post<HealthInsightResponse>(`${this.baseUrl}/api/v1/health/insight/refresh`, {});
   }
 
   updateMonthlyContribution(monthlyContribution: number): Observable<MonthlyContributionResponse> {

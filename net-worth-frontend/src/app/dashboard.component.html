@@ -236,6 +236,24 @@
         <p class="muted">No insights yet. Click "Refresh insights" to generate one.</p>
       }
     </section>
+
+    <section class="insights-card">
+      <div class="insights-card__header">
+        <h2>Daily Health Insights</h2>
+        <button (click)="refreshHealthInsight()" [disabled]="refreshingHealthInsight()">
+          @if (refreshingHealthInsight()) {
+            <span class="spinner"></span>
+          }
+          {{ refreshingHealthInsight() ? 'Analyzing…' : 'Refresh insights' }}
+        </button>
+      </div>
+      @if (healthInsight(); as insight) {
+        <p class="insights-card__text">{{ insight.commentary }}</p>
+        <p class="muted">Last updated: {{ insight.generatedAt | date: 'medium' }}</p>
+      } @else {
+        <p class="muted">No insights yet. Generated automatically every morning, or click "Refresh insights" now.</p>
+      }
+    </section>
   } @else {
     <p class="muted">No snapshots yet. Click "Take snapshot now" to get started.</p>
   }
