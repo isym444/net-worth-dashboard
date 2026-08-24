@@ -76,7 +76,7 @@ networth:
     user-id: ${OPEN_WEARABLES_USER_ID:}
   health:
     insight:
-      cron: "${HEALTH_INSIGHT_CRON:0 0 7 * * *}"
+      cron: "${HEALTH_INSIGHT_CRON:0 0 6 * * *}"
       zone: "${HEALTH_INSIGHT_ZONE:UTC}"
 
 management:

@@ -28,10 +28,16 @@ public class GeminiClient {
             .requestFactory(timeoutRequestFactory())
             .build();
 
+    // The Interactions API runs internal "thought" reasoning steps before producing output,
+    // which can genuinely take close to (or over) 30s for larger prompts — hence both the
+    // longer-than-usual read timeout and the retry loop below for when it tips over that.
+    private static final int MAX_ATTEMPTS = 3;
+    private static final Duration INITIAL_BACKOFF = Duration.ofSeconds(3);
+
     private static SimpleClientHttpRequestFactory timeoutRequestFactory() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(5));
-        factory.setReadTimeout(Duration.ofSeconds(30));
+        factory.setConnectTimeout(Duration.ofSeconds(8));
+        factory.setReadTimeout(Duration.ofSeconds(200));
         return factory;
     }
 
@@ -42,21 +48,36 @@ public class GeminiClient {
 
         Map<String, Object> body = Map.of("model", model, "input", prompt);
 
-        JsonNode response;
-        try {
-            response = restClient.post()
-                    .uri(URI)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .header("x-goog-api-key", apiKey)
-                    .header("Api-Revision", API_REVISION)
-                    .body(body)
-                    .retrieve()
-                    .body(JsonNode.class);
-        } catch (RestClientException e) {
-            // The API key travels in a header here, not the URL, so — unlike the old
-            // generateContent endpoint — the exception message is safe to log directly.
-            log.error("Gemini request failed", e);
-            String detail = (e instanceof RestClientResponseException re)
+        JsonNode response = null;
+        RestClientException lastError = null;
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            try {
+                response = restClient.post()
+                        .uri(URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("x-goog-api-key", apiKey)
+                        .header("Api-Revision", API_REVISION)
+                        .body(body)
+                        .retrieve()
+                        .body(JsonNode.class);
+                lastError = null;
+                break;
+            } catch (RestClientException e) {
+                lastError = e;
+                boolean retryable = isRetryable(e);
+                // The API key travels in a header here, not the URL, so — unlike the old
+                // generateContent endpoint — the exception message is safe to log directly.
+                log.warn("Gemini request failed (attempt {}/{}, retryable={})", attempt, MAX_ATTEMPTS, retryable, e);
+                if (!retryable || attempt == MAX_ATTEMPTS) {
+                    break;
+                }
+                sleepBeforeRetry(INITIAL_BACKOFF.multipliedBy(1L << (attempt - 1)));
+            }
+        }
+
+        if (lastError != null) {
+            log.error("Gemini request failed after {} attempt(s)", MAX_ATTEMPTS, lastError);
+            String detail = (lastError instanceof RestClientResponseException re)
                     ? "HTTP " + re.getStatusCode().value()
                     : "network/timeout error";
             throw new IllegalStateException("Gemini API request failed (" + detail + ")");
@@ -67,6 +88,23 @@ public class GeminiClient {
             throw new IllegalStateException("Gemini API returned no usable content");
         }
         return text.trim();
+    }
+
+    /** Retries on timeouts/network errors and 5xx/429 responses; not on 4xx (retrying won't help those). */
+    private static boolean isRetryable(RestClientException e) {
+        if (e instanceof RestClientResponseException re) {
+            return re.getStatusCode().is5xxServerError() || re.getStatusCode().value() == 429;
+        }
+        return true;
+    }
+
+    private static void sleepBeforeRetry(Duration duration) {
+        try {
+            Thread.sleep(duration.toMillis());
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting to retry Gemini request", ie);
+        }
     }
 
     /**
