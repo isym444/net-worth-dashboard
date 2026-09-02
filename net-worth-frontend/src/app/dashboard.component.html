@@ -35,6 +35,11 @@
         <span>Max Daily Spend (£400 Buffer)</span>
         <strong>{{ dailySpendToInvestBuffer(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
       </div>
+      <div class="stat-card stat-card--info">
+        <span>Days Until Next Paycheck</span>
+        <strong>{{ daysUntilNextPaycheck() }} days</strong>
+        <small>{{ daysUntilNextPaycheckInWeeks() }}</small>
+      </div>
       <div class="stat-card stat-card--warning">
         <span>Annual Portfolio Return</span>
         <strong>{{ latestSnapshot.grandTotal * 0.07 | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>

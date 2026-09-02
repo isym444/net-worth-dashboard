@@ -199,10 +199,17 @@ export class DashboardComponent implements OnInit {
     return (amountLeft - this.monthlySubscriptions - this.investBuffer) / this.daysUntilNextPaycheck();
   }
 
-  private daysUntilNextPaycheck(): number {
+  protected daysUntilNextPaycheck(): number {
     const now = new Date();
     const payday = nextPaycheckDate(now);
     return daysUntilPaycheck(now, payday);
+  }
+
+  protected daysUntilNextPaycheckInWeeks(): string {
+    const totalDays = this.daysUntilNextPaycheck();
+    const weeks = Math.floor(totalDays / 7);
+    const days = totalDays % 7;
+    return `${weeks}w ${days}d`;
   }
 
   private extractError(err: unknown): string {

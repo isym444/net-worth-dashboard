@@ -146,6 +146,12 @@ header button:disabled {
   color: var(--error);
 }
 
+.stat-card small {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
 .stat-card--primary {
   border-color: var(--accent);
   background: var(--surface-raised);
