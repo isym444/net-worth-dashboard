@@ -111,14 +111,6 @@ header button:disabled {
   animation: fade-in-up 200ms var(--ease-out) both;
 }
 
-.headline {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  animation: fade-in-up 240ms var(--ease-out) both;
-}
-
 .stat-card {
   display: flex;
   flex-direction: column;
@@ -340,6 +332,12 @@ header button:disabled {
   margin: 0;
 }
 
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
 .table-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -396,14 +394,13 @@ tbody tr:hover {
 }
 
 @media (max-width: 640px) {
-  .headline {
+  .card-grid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   :host,
-  .headline,
   .insights-card,
   .chart-card,
   .table-card,

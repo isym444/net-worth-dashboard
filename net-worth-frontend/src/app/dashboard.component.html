@@ -16,181 +16,218 @@
   <p class="muted">Loading…</p>
 } @else {
   @if (latest(); as latestSnapshot) {
-    <section class="headline">
-      <div class="stat-card stat-card--primary">
-        <span>Net worth</span>
-        <strong>{{ latestSnapshot.grandTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+    <section class="insights-card">
+      <div class="insights-card__header">
+        <h2>Net Worth Overview</h2>
       </div>
-      <div class="stat-card stat-card--info">
-        <span>Remaining for month</span>
-        <strong>
-          {{ latestSnapshot.chaseTotal - latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}
-        </strong>
-      </div>
-      <div class="stat-card stat-card--info">
-        <span>Max Daily Spend</span>
-        <strong>{{ dailySpend(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card stat-card--info">
-        <span>Max Daily Spend (£400 Buffer)</span>
-        <strong>{{ dailySpendToInvestBuffer(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card stat-card--info">
-        <span>Days Until Next Paycheck</span>
-        <strong>{{ daysUntilNextPaycheck() }} days</strong>
-        <small>{{ daysUntilNextPaycheckInWeeks() }}</small>
-      </div>
-      <div class="stat-card stat-card--warning">
-        <span>Annual Portfolio Return</span>
-        <strong>{{ latestSnapshot.grandTotal * 0.07 | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card">
-        <span>Trading212</span>
-        <strong>{{ latestSnapshot.t212Total | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card">
-        <span>Crypto.com</span>
-        <strong>{{ latestSnapshot.cryptoTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card">
-        <span>Pension</span>
-        <strong>{{ latestSnapshot.pensionTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card">
-        <span>Barclays Shares</span>
-        <strong>{{ latestSnapshot.barclaysSharesTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card">
-        <span>Chase</span>
-        <strong>{{ latestSnapshot.chaseTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card">
-        <span>Amex Debt</span>
-        <strong class="negative">{{ latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-      </div>
-      <div class="stat-card">
-        <span>Net worth (EUR)</span>
-        <strong>
-          @if (latestSnapshot.grandTotalEur !== null) {
-            {{ latestSnapshot.grandTotalEur | number: '1.2-2' }} EUR
-          } @else {
-            —
-          }
-        </strong>
-      </div>
-      <div class="stat-card">
-        <span>Net worth (USD)</span>
-        <strong>
-          @if (latestSnapshot.grandTotalUsd !== null) {
-            {{ latestSnapshot.grandTotalUsd | number: '1.2-2' }} USD
-          } @else {
-            —
-          }
-        </strong>
-      </div>
-      <div class="stat-card">
-        <span>Net worth (MXN)</span>
-        <strong>
-          @if (latestSnapshot.grandTotalMxn !== null) {
-            {{ latestSnapshot.grandTotalMxn | number: '1.2-2' }} MXN
-          } @else {
-            —
-          }
-        </strong>
-      </div>
-      <div class="stat-card">
-        <span>Net worth (JPY)</span>
-        <strong>
-          @if (latestSnapshot.grandTotalJpy !== null) {
-            {{ latestSnapshot.grandTotalJpy | number: '1.2-2' }} JPY
-          } @else {
-            —
-          }
-        </strong>
-      </div>
-      @if (expectedNetWorth(); as proj) {
+      <div class="card-grid">
+        <div class="stat-card stat-card--primary">
+          <span>Net worth</span>
+          <strong>{{ latestSnapshot.grandTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
+        <div class="stat-card stat-card--warning">
+          <span>Annual Portfolio Return</span>
+          <strong>{{ latestSnapshot.grandTotal * 0.07 | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
         <div class="stat-card">
-          <span>Net worth at 40 (2036)</span>
+          <span>Net worth (EUR)</span>
           <strong>
-            @if (proj.at40 !== null) {
-              {{ proj.at40 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            @if (latestSnapshot.grandTotalEur !== null) {
+              {{ latestSnapshot.grandTotalEur | number: '1.2-2' }} EUR
             } @else {
               —
             }
           </strong>
         </div>
         <div class="stat-card">
-          <span>Net worth at 40 (2036, with contributions)</span>
+          <span>Net worth (USD)</span>
           <strong>
-            @if (proj.withContributionsAt40 !== null) {
-              {{ proj.withContributionsAt40 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            @if (latestSnapshot.grandTotalUsd !== null) {
+              {{ latestSnapshot.grandTotalUsd | number: '1.2-2' }} USD
             } @else {
               —
             }
           </strong>
         </div>
         <div class="stat-card">
-          <span>Net worth at 50 (2046)</span>
+          <span>Net worth (MXN)</span>
           <strong>
-            @if (proj.at50 !== null) {
-              {{ proj.at50 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            @if (latestSnapshot.grandTotalMxn !== null) {
+              {{ latestSnapshot.grandTotalMxn | number: '1.2-2' }} MXN
             } @else {
               —
             }
           </strong>
         </div>
         <div class="stat-card">
-          <span>Net worth at 50 (2046, with contributions)</span>
+          <span>Net worth (JPY)</span>
           <strong>
-            @if (proj.withContributionsAt50 !== null) {
-              {{ proj.withContributionsAt50 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+            @if (latestSnapshot.grandTotalJpy !== null) {
+              {{ latestSnapshot.grandTotalJpy | number: '1.2-2' }} JPY
             } @else {
               —
             }
           </strong>
         </div>
-        <div class="stat-card">
-          <span>Net worth at 60 (2056)</span>
-          <strong>
-            @if (proj.at60 !== null) {
-              {{ proj.at60 | number: '1.2-2' }} {{ latestSnapshot.currency }}
-            } @else {
-              —
-            }
-          </strong>
-        </div>
-        <div class="stat-card">
-          <span>Net worth at 60 (2056, with contributions)</span>
-          <strong>
-            @if (proj.withContributionsAt60 !== null) {
-              {{ proj.withContributionsAt60 | number: '1.2-2' }} {{ latestSnapshot.currency }}
-            } @else {
-              —
-            }
-          </strong>
-        </div>
-        <div class="stat-card">
-          <span>Net worth at 65 (2061)</span>
-          <strong>
-            @if (proj.at65 !== null) {
-              {{ proj.at65 | number: '1.2-2' }} {{ latestSnapshot.currency }}
-            } @else {
-              —
-            }
-          </strong>
-        </div>
-        <div class="stat-card">
-          <span>Net worth at 65 (2061, with contributions)</span>
-          <strong>
-            @if (proj.withContributionsAt65 !== null) {
-              {{ proj.withContributionsAt65 | number: '1.2-2' }} {{ latestSnapshot.currency }}
-            } @else {
-              —
-            }
-          </strong>
-        </div>
-      }
+      </div>
     </section>
+
+    <section class="insights-card">
+      <div class="insights-card__header">
+        <h2>Spending &amp; Cashflow</h2>
+      </div>
+      <div class="card-grid">
+        <div class="stat-card stat-card--info">
+          <span>Remaining for month</span>
+          <strong>
+            {{ latestSnapshot.chaseTotal - latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}
+          </strong>
+        </div>
+        <div class="stat-card stat-card--info">
+          <span>Max Daily Spend</span>
+          <strong>{{ dailySpend(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
+        <div class="stat-card stat-card--info">
+          <span>Max Daily Spend (£400 Buffer)</span>
+          <strong>{{ dailySpendToInvestBuffer(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
+        <div class="stat-card stat-card--info">
+          <span>Days Until Next Paycheck</span>
+          <strong>{{ daysUntilNextPaycheck() }} days</strong>
+          <small>{{ daysUntilNextPaycheckInWeeks() }}</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="insights-card">
+      <div class="insights-card__header">
+        <h2>Account Balances</h2>
+      </div>
+      <div class="card-grid">
+        <div class="stat-card">
+          <span>Trading212</span>
+          <strong>{{ latestSnapshot.t212Total | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Crypto.com</span>
+          <strong>{{ latestSnapshot.cryptoTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Pension</span>
+          <strong>{{ latestSnapshot.pensionTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Barclays Shares</span>
+          <strong>{{ latestSnapshot.barclaysSharesTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Chase</span>
+          <strong>{{ latestSnapshot.chaseTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Amex Debt</span>
+          <strong class="negative">{{ latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
+      </div>
+    </section>
+
+    @if (expectedNetWorth(); as proj) {
+      <section class="insights-card">
+        <div class="insights-card__header">
+          <h2>Retirement Projections</h2>
+        </div>
+        <div class="card-grid">
+          <div class="stat-card">
+            <span>Net worth at 40 (2036)</span>
+            <strong>
+              @if (proj.at40 !== null) {
+                {{ proj.at40 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+              } @else {
+                —
+              }
+            </strong>
+          </div>
+          <div class="stat-card">
+            <span>Net worth at 50 (2046)</span>
+            <strong>
+              @if (proj.at50 !== null) {
+                {{ proj.at50 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+              } @else {
+                —
+              }
+            </strong>
+          </div>
+          <div class="stat-card">
+            <span>Net worth at 60 (2056)</span>
+            <strong>
+              @if (proj.at60 !== null) {
+                {{ proj.at60 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+              } @else {
+                —
+              }
+            </strong>
+          </div>
+          <div class="stat-card">
+            <span>Net worth at 65 (2061)</span>
+            <strong>
+              @if (proj.at65 !== null) {
+                {{ proj.at65 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+              } @else {
+                —
+              }
+            </strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="insights-card">
+        <div class="insights-card__header">
+          <h2>Retirement Projections (With Contributions)</h2>
+        </div>
+        <div class="card-grid">
+          <div class="stat-card">
+            <span>Net worth at 40 (2036, with contributions)</span>
+            <strong>
+              @if (proj.withContributionsAt40 !== null) {
+                {{ proj.withContributionsAt40 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+              } @else {
+                —
+              }
+            </strong>
+          </div>
+          <div class="stat-card">
+            <span>Net worth at 50 (2046, with contributions)</span>
+            <strong>
+              @if (proj.withContributionsAt50 !== null) {
+                {{ proj.withContributionsAt50 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+              } @else {
+                —
+              }
+            </strong>
+          </div>
+          <div class="stat-card">
+            <span>Net worth at 60 (2056, with contributions)</span>
+            <strong>
+              @if (proj.withContributionsAt60 !== null) {
+                {{ proj.withContributionsAt60 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+              } @else {
+                —
+              }
+            </strong>
+          </div>
+          <div class="stat-card">
+            <span>Net worth at 65 (2061, with contributions)</span>
+            <strong>
+              @if (proj.withContributionsAt65 !== null) {
+                {{ proj.withContributionsAt65 | number: '1.2-2' }} {{ latestSnapshot.currency }}
+              } @else {
+                —
+              }
+            </strong>
+          </div>
+        </div>
+      </section>
+    }
 
     <section class="projection-card">
       <div class="projection-card__header">
@@ -222,6 +259,34 @@
           }
           {{ updatingContribution() ? 'Updating…' : 'Update' }}
         </button>
+      </div>
+    </section>
+
+    <section class="insights-card">
+      <div class="insights-card__header">
+        <h2>Time to FI (4% Safe Withdrawal Rate)</h2>
+      </div>
+      <div class="card-grid">
+        @for (target of annualIncomeTargets; track target) {
+          <div class="stat-card">
+            <span>{{ target | number: '1.0-0' }} {{ latestSnapshot.currency }}/yr</span>
+            <strong>{{ timeToSustainableIncome(latestSnapshot, target, safeWithdrawalRate) }}</strong>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="insights-card">
+      <div class="insights-card__header">
+        <h2>Time to {{ assumedAnnualReturnPercentLabel }} Return Covering Income</h2>
+      </div>
+      <div class="card-grid">
+        @for (target of annualIncomeTargets; track target) {
+          <div class="stat-card">
+            <span>{{ target | number: '1.0-0' }} {{ latestSnapshot.currency }}/yr</span>
+            <strong>{{ timeToSustainableIncome(latestSnapshot, target, assumedAnnualReturn) }}</strong>
+          </div>
+        }
       </div>
     </section>
 

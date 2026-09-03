@@ -212,6 +212,63 @@ export class DashboardComponent implements OnInit {
     return `${weeks}w ${days}d`;
   }
 
+  protected readonly annualIncomeTargets = [10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000];
+  protected readonly assumedAnnualReturn = 0.07;
+  protected readonly safeWithdrawalRate = 0.04;
+  protected readonly assumedAnnualReturnPercentLabel = `${Math.round(this.assumedAnnualReturn * 100)}%`;
+
+  /** Matches NetWorthHistoryService.BIRTH_DATE on the backend, used only to label milestones with a projected age. */
+  private readonly birthDate = new Date(1996, 5, 14);
+  private readonly maxProjectionMonths = 1200;
+
+  /**
+   * Months of monthly-compounding growth (at assumedAnnualReturn), plus the current
+   * monthly contribution deposited every month, until the portfolio can sustain
+   * `targetAnnual` at `withdrawalRate`. Mirrors PortfolioProjectionService's
+   * contribution model so this stays consistent with the backend's projections.
+   */
+  protected timeToSustainableIncome(snapshot: NetWorthSnapshot, targetAnnual: number, withdrawalRate: number): string {
+    const requiredPortfolio = targetAnnual / withdrawalRate;
+    return this.timeToReachPortfolio(snapshot.grandTotal, requiredPortfolio, this.monthlyContributionInput());
+  }
+
+  private timeToReachPortfolio(currentNetWorth: number, requiredPortfolio: number, monthlyContribution: number): string {
+    if (currentNetWorth >= requiredPortfolio) {
+      return `Reached (age ${this.ageAfterMonths(0)})`;
+    }
+
+    const monthlyGrowthFactor = Math.pow(1 + this.assumedAnnualReturn, 1 / 12);
+    let balance = currentNetWorth;
+    let months = 0;
+    while (balance < requiredPortfolio && months < this.maxProjectionMonths) {
+      balance = balance * monthlyGrowthFactor + monthlyContribution;
+      months++;
+    }
+    if (balance < requiredPortfolio) {
+      return '100y+';
+    }
+    return `${this.formatYearsMonths(months)} (age ${this.ageAfterMonths(months)})`;
+  }
+
+  private formatYearsMonths(totalMonths: number): string {
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+    return `${years}y ${months}m`;
+  }
+
+  private ageAfterMonths(months: number): number {
+    const future = new Date();
+    future.setMonth(future.getMonth() + months);
+    let age = future.getFullYear() - this.birthDate.getFullYear();
+    const hadBirthdayThisYear =
+      future.getMonth() > this.birthDate.getMonth() ||
+      (future.getMonth() === this.birthDate.getMonth() && future.getDate() >= this.birthDate.getDate());
+    if (!hadBirthdayThisYear) {
+      age--;
+    }
+    return age;
+  }
+
   private extractError(err: unknown): string {
     if (err && typeof err === 'object' && 'status' in err && (err as { status?: number }).status === 401) {
       return 'Access key rejected. Refresh and try again.';
