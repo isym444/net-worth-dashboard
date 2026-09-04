@@ -16,6 +16,8 @@
   <p class="muted">Loading…</p>
 } @else {
   @if (latest(); as latestSnapshot) {
+    <div class="dashboard-grid">
+    <div class="dashboard-row">
     <section class="insights-card">
       <div class="insights-card__header">
         <h2>Net Worth Overview</h2>
@@ -71,34 +73,9 @@
         </div>
       </div>
     </section>
+    </div>
 
-    <section class="insights-card">
-      <div class="insights-card__header">
-        <h2>Spending &amp; Cashflow</h2>
-      </div>
-      <div class="card-grid">
-        <div class="stat-card stat-card--info">
-          <span>Remaining for month</span>
-          <strong>
-            {{ latestSnapshot.chaseTotal - latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}
-          </strong>
-        </div>
-        <div class="stat-card stat-card--info">
-          <span>Max Daily Spend</span>
-          <strong>{{ dailySpend(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-        </div>
-        <div class="stat-card stat-card--info">
-          <span>Max Daily Spend (£400 Buffer)</span>
-          <strong>{{ dailySpendToInvestBuffer(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
-        </div>
-        <div class="stat-card stat-card--info">
-          <span>Days Until Next Paycheck</span>
-          <strong>{{ daysUntilNextPaycheck() }} days</strong>
-          <small>{{ daysUntilNextPaycheckInWeeks() }}</small>
-        </div>
-      </div>
-    </section>
-
+    <div class="dashboard-row">
     <section class="insights-card">
       <div class="insights-card__header">
         <h2>Account Balances</h2>
@@ -130,8 +107,74 @@
         </div>
       </div>
     </section>
+    </div>
+
+    <div class="dashboard-row">
+    <section class="insights-card">
+      <div class="insights-card__header">
+        <h2>Spending &amp; Cashflow</h2>
+      </div>
+      <div class="card-grid">
+        <div class="stat-card stat-card--info">
+          <span>Remaining for month</span>
+          <strong>
+            {{ latestSnapshot.chaseTotal - latestSnapshot.amexDebtTotal | number: '1.2-2' }} {{ latestSnapshot.currency }}
+          </strong>
+        </div>
+        <div class="stat-card stat-card--info">
+          <span>Max Daily Spend</span>
+          <strong>{{ dailySpend(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
+        <div class="stat-card stat-card--info">
+          <span>Max Daily Spend (£400 Buffer)</span>
+          <strong>{{ dailySpendToInvestBuffer(latestSnapshot) | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+        </div>
+        <div class="stat-card stat-card--info">
+          <span>Days Until Next Paycheck</span>
+          <strong>{{ daysUntilNextPaycheck() }} days</strong>
+          <small>{{ daysUntilNextPaycheckInWeeks() }}</small>
+        </div>
+      </div>
+    </section>
+    </div>
+
+    <div class="dashboard-row">
+    <section class="projection-card">
+      <div class="projection-card__header">
+        <h2>Estimated Net Worth in 1 Year</h2>
+      </div>
+      <strong class="projection-card__value">
+        @if (estimatedNetWorth1y() !== null) {
+          {{ estimatedNetWorth1y() | number: '1.2-2' }} {{ latestSnapshot.currency }}
+        } @else {
+          —
+        }
+      </strong>
+      <div class="projection-card__controls">
+        <label for="monthly-contribution">Monthly contribution ({{ latestSnapshot.currency }})</label>
+        <input
+          id="monthly-contribution"
+          type="number"
+          min="0"
+          step="1"
+          [value]="monthlyContributionInput()"
+          #contributionInput
+        />
+        <button
+          (click)="updateMonthlyContribution(contributionInput.value)"
+          [disabled]="updatingContribution()"
+        >
+          @if (updatingContribution()) {
+            <span class="spinner"></span>
+          }
+          {{ updatingContribution() ? 'Updating…' : 'Update' }}
+        </button>
+      </div>
+    </section>
+    </div>
 
     @if (expectedNetWorth(); as proj) {
+      <div class="dashboard-row">
       <section class="insights-card">
         <div class="insights-card__header">
           <h2>Retirement Projections</h2>
@@ -227,41 +270,10 @@
           </div>
         </div>
       </section>
+      </div>
     }
 
-    <section class="projection-card">
-      <div class="projection-card__header">
-        <h2>Estimated Net Worth in 1 Year</h2>
-      </div>
-      <strong class="projection-card__value">
-        @if (estimatedNetWorth1y() !== null) {
-          {{ estimatedNetWorth1y() | number: '1.2-2' }} {{ latestSnapshot.currency }}
-        } @else {
-          —
-        }
-      </strong>
-      <div class="projection-card__controls">
-        <label for="monthly-contribution">Monthly contribution ({{ latestSnapshot.currency }})</label>
-        <input
-          id="monthly-contribution"
-          type="number"
-          min="0"
-          step="1"
-          [value]="monthlyContributionInput()"
-          #contributionInput
-        />
-        <button
-          (click)="updateMonthlyContribution(contributionInput.value)"
-          [disabled]="updatingContribution()"
-        >
-          @if (updatingContribution()) {
-            <span class="spinner"></span>
-          }
-          {{ updatingContribution() ? 'Updating…' : 'Update' }}
-        </button>
-      </div>
-    </section>
-
+    <div class="dashboard-row">
     <section class="insights-card">
       <div class="insights-card__header">
         <h2>Time to FI (4% Safe Withdrawal Rate)</h2>
@@ -289,7 +301,9 @@
         }
       </div>
     </section>
+    </div>
 
+    <div class="dashboard-row">
     <section class="insights-card">
       <div class="insights-card__header">
         <h2>AI Spending Insights</h2>
@@ -324,6 +338,8 @@
         <p class="muted">No insights yet. Generated automatically every morning, or click "Refresh insights" now.</p>
       }
     </section>
+    </div>
+    </div>
   } @else {
     <p class="muted">No snapshots yet. Click "Take snapshot now" to get started.</p>
   }

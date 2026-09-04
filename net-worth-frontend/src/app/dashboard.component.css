@@ -1,6 +1,6 @@
 :host {
   display: block;
-  max-width: 900px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
   animation: fade-in-view 250ms var(--ease-out) both;
@@ -188,6 +188,25 @@ header button:disabled {
   max-width: 100%;
   height: auto;
   border-radius: calc(var(--radius) - 4px);
+}
+
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  align-items: start;
+  gap: 1.5rem;
+}
+
+.dashboard-row > .insights-card,
+.dashboard-row > .projection-card {
+  margin-bottom: 0;
 }
 
 .projection-card {
