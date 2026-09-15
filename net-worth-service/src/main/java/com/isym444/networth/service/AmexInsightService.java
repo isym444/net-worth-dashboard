@@ -92,6 +92,7 @@ public class AmexInsightService {
                 - Don't comment on the fact that transactions are logged without category or ready to assign.
                 - Don't comment specifically on starting balances.
                 - Don't recommend cancelling subscriptions. I track these separately and know I should probably cancel some but find them too useful.
+                - Don't tell me off for spending as long as it is within my spending targets i.e. around 20 gbp per day or around 600 gbp per month. On the contrary, give me positive reinforcement if I'm keeping within my monthly spending target
 
                 If the transaction list is empty, say so briefly and skip the sections that don't apply.
 
