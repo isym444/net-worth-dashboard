@@ -1,61 +1,16 @@
+# The backend (net-worth-service) no longer runs on Render — it moved to a
+# Hostinger VPS Docker container (image ghcr.io/isym444/net-worth-tracker-backend,
+# published by .github/workflows/backend-docker-publish.yml) behind Traefik at
+# https://nwapi.isym.uk. See net-worth-service/deploy/ and README.md for the
+# deployment shape. This file is not live-synced as a Render Blueprint for
+# the backend; it's kept for the frontend static site and as a historical
+# record of the old backend config.
+#
+# The `databases:` block that used to sit here was never actually provisioned
+# on Render — the DB has always been Supabase, reached via DATABASE_URL /
+# SPRING_DATASOURCE_* env vars set directly on the backend, regardless of
+# where the backend itself runs.
 services:
-  - type: web
-    name: net-worth-service
-    runtime: docker
-    rootDir: net-worth-service
-    dockerfilePath: ./Dockerfile
-    plan: starter
-    healthCheckPath: /actuator/health
-    envVars:
-      - key: DATABASE_URL
-        sync: false
-      - key: TRADING212_API_KEY_ISA
-        sync: false
-      - key: TRADING212_API_SECRET_ISA
-        sync: false
-      - key: TRADING212_API_KEY_INVEST
-        sync: false
-      - key: TRADING212_API_SECRET_INVEST
-        sync: false
-      - key: TRADING212_ENV
-        value: live
-      - key: CRYPTO_COM_KEY
-        sync: false
-      - key: CRYPTO_COM_SECRET
-        sync: false
-      - key: YNAB_API_TOKEN
-        sync: false
-      - key: YNAB_BUDGET_ID
-        value: last-used
-      - key: YNAB_CHASE_ACCOUNT_IDS
-        sync: false
-      - key: YNAB_AMEX_ACCOUNT_IDS
-        sync: false
-      - key: SNAPSHOT_CRON
-        value: "0 0 7 * * *"
-      - key: SNAPSHOT_ZONE
-        value: UTC
-      - key: DASHBOARD_ACCESS_KEY
-        sync: false
-      - key: EXCHANGE_RATE_API_KEY
-        sync: false
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: GEMINI_MODEL
-        value: gemini-3.6-flash
-      - key: OPEN_WEARABLES_BASE_URL
-        sync: false
-      - key: OPEN_WEARABLES_API_KEY
-        sync: false
-      - key: OPEN_WEARABLES_USER_ID
-        sync: false
-      - key: HEALTH_INSIGHT_CRON
-        value: "0 0 7 * * *"
-      - key: HEALTH_INSIGHT_ZONE
-        value: UTC
-      - key: FRONTEND_ORIGIN
-        value: https://net-worth-frontend-nt7d.onrender.com
-
   - type: web
     name: net-worth-frontend
     runtime: static
@@ -66,10 +21,6 @@ services:
       - key: NODE_VERSION
         value: "24"
       - key: API_BASE_URL
-        value: https://net-worth-service-nt7d.onrender.com
+        value: https://nwapi.isym.uk
       - key: MONTHLY_SUBSCRIPTIONS
         value: "310"
-
-databases:
-  - name: net-worth-db
-    plan: free

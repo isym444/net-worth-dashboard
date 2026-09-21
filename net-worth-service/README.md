@@ -34,7 +34,7 @@ data point.
 | `YNAB_AMEX_ACCOUNT_IDS` | no | Comma-separated YNAB account IDs summed into `amex_total` (stored as debt magnitude) and returned by `/api/v1/amex/transactions`. |
 | `SNAPSHOT_CRON` | no | Cron expression (6-field, Spring format: sec min hour day month weekday) for the daily job. Default `0 0 7 * * *` (07:00) |
 | `SNAPSHOT_ZONE` | no | Timezone for `SNAPSHOT_CRON`. Default `UTC` |
-| `PORT` | no | Listen port. Render sets this automatically |
+| `PORT` | no | Listen port. Default `8080`; unset in production (the VPS compose file doesn't set it) |
 | `DASHBOARD_ACCESS_KEY` | no | Shared secret required in the `X-Api-Key` header on every `/api/**` request. Leave unset to disable auth entirely (e.g. local dev). |
 | `GEMINI_API_KEY` | no | Google Gemini API key, used to generate Amex spending insights (`POST /api/v1/amex/insights` and the daily cron snapshot). Get one at [Google AI Studio](https://aistudio.google.com/apikey). Leave unset to disable insight generation (manual refresh returns an error; snapshots still save, just without fresh commentary). |
 | `GEMINI_MODEL` | no | Gemini model id used for insight generation. Default `gemini-3.6-flash` |
@@ -53,7 +53,7 @@ snapshots will fail with "No API keys configured".
 | `GET /api/v1/chart?currency=GBP` | PNG line chart (Trading212 / Crypto.com / net worth) rendered from the history. |
 | `GET /api/v1/amex/transactions?days=30` | Recent transactions from any YNAB account with "amex" in its name, newest first. `days` defaults to 30. |
 | `POST /api/v1/amex/insights` | Fetch recent Amex transactions, ask Gemini to analyze them, and overwrite `ai_commentary` on the latest snapshot row for every currency. Returns `{"commentary": "...", "generatedAt": "...", "transactionCount": 12}`. Requires `GEMINI_API_KEY`. |
-| `GET /actuator/health` | Health check (used by Render) |
+| `GET /actuator/health` | Health check |
 
 `GET /api/v1/history` returns a JSON object, not a bare array:
 
@@ -110,36 +110,40 @@ curl "http://localhost:8080/api/v1/amex/transactions?days=30"
 curl -X POST http://localhost:8080/api/v1/amex/insights
 ```
 
-## Deploy to Render
+## Deploy
 
-**Option A — Blueprint (`render.yaml`)**
+The backend runs as a Docker container on a Hostinger VPS, behind Traefik
+(auto HTTPS via Let's Encrypt) at **https://nwapi.isym.uk**. The database
+stays on Supabase regardless — only the backend container moved.
 
-1. Push the repo root (containing `net-worth-service/`, `net-worth-frontend/`,
-   and `render.yaml`) to a GitHub repo.
-2. In Render: New → Blueprint, point it at the repo. It provisions three
-   resources: the backend web service (built from `Dockerfile`), the
-   `net-worth-frontend` static site, and a free Postgres database — wiring
-   `DATABASE_URL` between the backend and Postgres automatically.
-3. In the backend service's Environment tab, fill in the credential
-   variables marked `sync: false` in `render.yaml` (`TRADING212_API_KEY_ISA`,
-   `CRYPTO_COM_KEY`, etc.) — Render leaves these blank for you to set
-   manually so they're never committed to the repo.
+1. **Image build**: `.github/workflows/backend-docker-publish.yml` builds
+   this directory's `Dockerfile` and pushes to
+   `ghcr.io/isym444/net-worth-tracker-backend` on every push touching
+   `net-worth-service/**`, then calls the Hostinger VPS API to redeploy.
+   The GHCR package must be public (Package settings → Visibility) so the
+   VPS can pull without registry credentials.
+2. **Hostinger Docker Manager**: project `net-worth-api` on VPS `1995417`,
+   configured via the **`.yaml editor` tab** (not the visual editor's
+   Environment fields — those silently fail to apply env vars). See
+   `deploy/hostinger-docker-compose.template.yml` for the compose shape;
+   paste a filled-in copy (real secret values, never committed) into that
+   editor.
+3. **Database**: `SPRING_DATASOURCE_URL` points at Supabase's **Session
+   Pooler** host (IPv4-compatible), not the direct `db.<ref>.supabase.co`
+   host (IPv6-only without a paid add-on).
+4. **Auto-redeploy**: the workflow's `redeploy` job calls
+   `POST /vps/v1/virtual-machines/1995417/docker/net-worth-api/update`
+   (Hostinger API, token in the `HOSTINGER_API_TOKEN` repo secret) to pull
+   the new image and recreate the container after each push.
+5. **Verifying env vars actually landed**: `docker inspect <container>
+   --format '{{range .Config.Env}}{{println .}}{{end}}'` on the VPS — don't
+   trust the Docker Manager UI or app logs alone.
 
-If either service's actual Render-assigned URL ever differs from what's
-hardcoded (`net-worth-frontend/src/environments/environment.prod.ts`'s
-`apiBaseUrl`, and `render.yaml`'s `FRONTEND_ORIGIN` value), both must be
-updated together and redeployed — a mismatch shows up as a CORS/connection
-error in the browser.
-
-**Option B — Manual**
-
-1. New → PostgreSQL, note the "Internal Database URL".
-2. New → Web Service → connect the repo (or "Existing image" if you push
-   one yourself) → Environment: Docker → set `dockerfilePath` to
-   `./Dockerfile`.
-3. Add the env vars from the table above; set `DATABASE_URL` to the
-   Postgres instance's Internal Database URL.
-4. Set the health check path to `/actuator/health`.
+The frontend stays on Render (`net-worth-frontend`, see
+`net-worth-frontend/README.md`) and reaches this API directly cross-origin
+via `API_BASE_URL` (baked in at build time — see `render.yaml` and
+`scripts/set-env.js`), so `FRONTEND_ORIGIN` here and `API_BASE_URL` there
+must stay in sync with wherever each side actually lives.
 
 ## Adjusting the schedule
 
