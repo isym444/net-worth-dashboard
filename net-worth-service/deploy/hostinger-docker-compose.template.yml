@@ -1,0 +1,57 @@
+# Template for Hostinger Docker Manager's ".yaml editor" tab (NOT the visual
+# editor's row-by-row Environment fields, which silently fails to apply env
+# vars). Copy this, fill in every <PLACEHOLDER>, and paste the real version
+# directly into the platform's UI. Never commit real secret values here.
+#
+# Project name in Docker Manager: net-worth-api
+# VPS: virtual machine 1995417
+# Domain: nwapi.isym.uk (A record -> VPS public IP, Cloudflare DNS-only/grey-cloud)
+#
+# No `networks:` section: Traefik on this VPS runs with network_mode: host
+# and discovers containers via the Docker socket, not a shared network.
+# No `ports:` mapping: Traefik reaches the container over the internal
+# bridge network; publishing 8080 to the host isn't needed and would be an
+# unencrypted bypass of TLS (see README/deploy notes).
+
+services:
+  net-worth-api:
+    image: ghcr.io/isym444/net-worth-tracker-backend:latest
+    restart: unless-stopped
+    environment:
+      # Session Pooler (IPv4-compatible) - NOT the direct db.<ref>.supabase.co
+      # host, which is IPv6-only without a paid add-on. Get the exact pooler
+      # hostname from Supabase Dashboard -> Project Settings -> Database ->
+      # Connection string -> Session pooler (region shard e.g. aws-0/aws-1
+      # varies by project, don't guess it).
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://<SUPABASE_SESSION_POOLER_HOST>:5432/postgres"
+      SPRING_DATASOURCE_USERNAME: "postgres.pfkyvwrwofpgsgaoqmmj"
+      SPRING_DATASOURCE_PASSWORD: "<SUPABASE_DB_PASSWORD>"
+      TRADING212_API_KEY_ISA: "<TRADING212_API_KEY_ISA>"
+      TRADING212_API_SECRET_ISA: "<TRADING212_API_SECRET_ISA>"
+      TRADING212_API_KEY_INVEST: "<TRADING212_API_KEY_INVEST>"
+      TRADING212_API_SECRET_INVEST: "<TRADING212_API_SECRET_INVEST>"
+      TRADING212_ENV: "live"
+      CRYPTO_COM_KEY: "<CRYPTO_COM_KEY>"
+      CRYPTO_COM_SECRET: "<CRYPTO_COM_SECRET>"
+      YNAB_API_TOKEN: "<YNAB_API_TOKEN>"
+      YNAB_BUDGET_ID: "last-used"
+      YNAB_CHASE_ACCOUNT_IDS: "<YNAB_CHASE_ACCOUNT_IDS>"
+      YNAB_AMEX_ACCOUNT_IDS: "<YNAB_AMEX_ACCOUNT_IDS>"
+      SNAPSHOT_CRON: "0 0 7 * * *"
+      SNAPSHOT_ZONE: "UTC"
+      DASHBOARD_ACCESS_KEY: "<DASHBOARD_ACCESS_KEY>"
+      EXCHANGE_RATE_API_KEY: "<EXCHANGE_RATE_API_KEY>"
+      GEMINI_API_KEY: "<GEMINI_API_KEY>"
+      GEMINI_MODEL: "gemini-3.6-flash"
+      OPEN_WEARABLES_BASE_URL: "<OPEN_WEARABLES_BASE_URL>"
+      OPEN_WEARABLES_API_KEY: "<OPEN_WEARABLES_API_KEY>"
+      OPEN_WEARABLES_USER_ID: "<OPEN_WEARABLES_USER_ID>"
+      HEALTH_INSIGHT_CRON: "0 0 7 * * *"
+      HEALTH_INSIGHT_ZONE: "UTC"
+      FRONTEND_ORIGIN: "https://net-worth-frontend-nt7d.onrender.com"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.net-worth-api.rule: "Host(`nwapi.isym.uk`)"
+      traefik.http.routers.net-worth-api.entrypoints: "websecure"
+      traefik.http.routers.net-worth-api.tls.certresolver: "letsencrypt"
+      traefik.http.services.net-worth-api.loadbalancer.server.port: "8080"
