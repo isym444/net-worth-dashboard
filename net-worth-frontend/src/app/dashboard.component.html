@@ -276,6 +276,36 @@
     <div class="dashboard-row">
     <section class="insights-card">
       <div class="insights-card__header">
+        <h2>Time to Net Worth Milestones (No Contributions)</h2>
+      </div>
+      <div class="card-grid">
+        @for (milestone of netWorthMilestones; track milestone) {
+          <div class="stat-card">
+            <span>{{ milestone | number: '1.0-0' }} {{ latestSnapshot.currency }}</span>
+            <strong>{{ timeToNetWorthMilestone(latestSnapshot, milestone, false) }}</strong>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="insights-card">
+      <div class="insights-card__header">
+        <h2>Time to Net Worth Milestones (With Contributions)</h2>
+      </div>
+      <div class="card-grid">
+        @for (milestone of netWorthMilestones; track milestone) {
+          <div class="stat-card">
+            <span>{{ milestone | number: '1.0-0' }} {{ latestSnapshot.currency }}</span>
+            <strong>{{ timeToNetWorthMilestone(latestSnapshot, milestone, true) }}</strong>
+          </div>
+        }
+      </div>
+    </section>
+    </div>
+
+    <div class="dashboard-row">
+    <section class="insights-card">
+      <div class="insights-card__header">
         <h2>Time to FI (4% Safe Withdrawal Rate)</h2>
       </div>
       <div class="card-grid">

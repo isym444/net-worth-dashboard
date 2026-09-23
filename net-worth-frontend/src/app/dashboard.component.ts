@@ -213,6 +213,7 @@ export class DashboardComponent implements OnInit {
   }
 
   protected readonly annualIncomeTargets = [10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000];
+  protected readonly netWorthMilestones = [100000, 250000, 500000, 750000, 1000000];
   protected readonly assumedAnnualReturn = 0.07;
   protected readonly safeWithdrawalRate = 0.04;
   protected readonly assumedAnnualReturnPercentLabel = `${Math.round(this.assumedAnnualReturn * 100)}%`;
@@ -230,6 +231,11 @@ export class DashboardComponent implements OnInit {
   protected timeToSustainableIncome(snapshot: NetWorthSnapshot, targetAnnual: number, withdrawalRate: number): string {
     const requiredPortfolio = targetAnnual / withdrawalRate;
     return this.timeToReachPortfolio(snapshot.grandTotal, requiredPortfolio, this.monthlyContributionInput());
+  }
+
+  /** Time to reach a flat net worth milestone, with or without the current monthly contribution. */
+  protected timeToNetWorthMilestone(snapshot: NetWorthSnapshot, target: number, withContributions: boolean): string {
+    return this.timeToReachPortfolio(snapshot.grandTotal, target, withContributions ? this.monthlyContributionInput() : 0);
   }
 
   private timeToReachPortfolio(currentNetWorth: number, requiredPortfolio: number, monthlyContribution: number): string {
