@@ -9,5 +9,7 @@
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen"
+    android:configure="com.isym444.networth.widget.WidgetConfigActivity"
+    android:widgetFeatures="reconfigurable"
     android:description="@string/widget_description"
     android:initialLayout="@layout/glance_default_loading_layout" />

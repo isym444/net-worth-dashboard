@@ -1,0 +1,19 @@
+{
+  "fetchedAt": 1790726400000,
+  "history": {
+    "snapshots": [
+      {"id": 1, "timestamp": "2026-09-29T07:00:00Z", "currency": "GBP", "grandTotal": 183000.5},
+      {"id": 2, "timestamp": "2026-09-30T07:00:00Z", "currency": "GBP", "grandTotal": 184320.25}
+    ],
+    "expectedNetWorthAt40": 900000.0,
+    "expectedNetWorthAt50": 1500000.0,
+    "expectedNetWorthAt60": 2500000.0,
+    "expectedNetWorthAt65": 3500000.0,
+    "expectedNetWorthWithContributionsAt40": 1000000.0,
+    "expectedNetWorthWithContributionsAt50": 1700000.0,
+    "expectedNetWorthWithContributionsAt60": 2900000.0,
+    "expectedNetWorthWithContributionsAt65": 4100000.0,
+    "estimatedNetWorth1y": 210000.0,
+    "monthlyContribution": 1000.0
+  }
+}
