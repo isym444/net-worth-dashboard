@@ -9,5 +9,6 @@ APP="build/Build/Products/Release/NetWorth.app"
 pkill -x NetWorth 2>/dev/null || true
 rm -rf /Applications/NetWorth.app
 ditto "$APP" /Applications/NetWorth.app
+killall chronod NotificationCenter 2>/dev/null || true   # reinstalling can leave the widget daemon with stale desktop-widget state; it restarts itself
 open /Applications/NetWorth.app
 echo "Installed. Enter the URL and key, press Save & test, then right-click the desktop → Edit Widgets → search 純資産."
