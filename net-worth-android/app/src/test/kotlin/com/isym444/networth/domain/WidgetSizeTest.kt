@@ -12,11 +12,12 @@ class WidgetSizeTest {
 
     @Test fun mediumIsWideAndShort() {
         assertEquals(WidgetSize.MEDIUM, WidgetSize.forDp(250f, 110f))
-        assertEquals(WidgetSize.MEDIUM, WidgetSize.forDp(320f, 199f))
+        assertEquals(WidgetSize.MEDIUM, WidgetSize.forDp(250f, 200f))    // the large layout needs ~340dp, or the footer hint is clipped
+        assertEquals(WidgetSize.MEDIUM, WidgetSize.forDp(320f, 339f))
     }
 
     @Test fun largeIsWideAndTall() {
-        assertEquals(WidgetSize.LARGE, WidgetSize.forDp(250f, 200f))
+        assertEquals(WidgetSize.LARGE, WidgetSize.forDp(250f, 340f))
         assertEquals(WidgetSize.LARGE, WidgetSize.forDp(400f, 500f))
     }
 }

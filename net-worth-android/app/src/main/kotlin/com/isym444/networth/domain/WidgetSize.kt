@@ -9,7 +9,7 @@ enum class WidgetSize {
 
     companion object {
         fun forDp(widthDp: Float, heightDp: Float): WidgetSize = when {
-            widthDp >= 250f && heightDp >= 200f -> LARGE
+            widthDp >= 250f && heightDp >= 340f -> LARGE   // the large layout needs ~340dp or its footer hint is clipped
             widthDp >= 250f && heightDp >= 110f -> MEDIUM
             else -> SMALL
         }

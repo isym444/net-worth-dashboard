@@ -23,7 +23,7 @@ data class Snapshot(
 /** Mirrors `NetWorthHistoryResponse` (net-worth-service). Every projection is nullable. */
 @Serializable
 data class HistoryResponse(
-    val snapshots: List<Snapshot> = emptyList(),          // oldest first
+    val snapshots: List<Snapshot>,                        // oldest first; required so a non-history JSON body fails to decode
     val expectedNetWorthAt40: Double? = null,
     val expectedNetWorthAt50: Double? = null,
     val expectedNetWorthAt60: Double? = null,

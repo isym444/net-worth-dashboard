@@ -1,7 +1,9 @@
 package com.isym444.networth.data
 
 import org.junit.Assert.assertEquals
+import kotlinx.serialization.SerializationException
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -46,7 +48,12 @@ class ModelsTest {
 
     @Test fun brandNewDatabaseDecodes() {
         assertTrue(ApiJson.decodeFromString<HistoryResponse>("""{"snapshots":[]}""").snapshots.isEmpty())
-        assertTrue(ApiJson.decodeFromString<HistoryResponse>("{}").snapshots.isEmpty())
+    }
+
+    @Test fun aJsonBodyWithoutSnapshotsIsNotAHistoryResponse() {
+        // {} or {"status":"ok"} means the URL points at some other service; it must not decode as an empty history.
+        assertThrows(SerializationException::class.java) { ApiJson.decodeFromString<HistoryResponse>("{}") }
+        assertThrows(SerializationException::class.java) { ApiJson.decodeFromString<HistoryResponse>("""{"status":"ok"}""") }
     }
 
     @Test fun cacheSnapshotRoundTrips() {

@@ -73,6 +73,11 @@ class ApiClientTest {
         assertThrows(ApiError.Decoding::class.java) { runBlocking { client().history() } }
     }
 
+    @Test fun aJsonPageThatIsNotHistoryIsADecodingError() {
+        server.enqueue(MockResponse().setBody("""{"status":"ok"}"""))
+        assertThrows(ApiError.Decoding::class.java) { runBlocking { client().history() } }
+    }
+
     @Test fun aTimeoutIsANetworkError() {
         server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
         val http = OkHttpClient.Builder().readTimeout(200, TimeUnit.MILLISECONDS).build()

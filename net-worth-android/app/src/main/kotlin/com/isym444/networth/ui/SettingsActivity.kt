@@ -103,6 +103,7 @@ private fun SettingsScreen() {
                         scope.launch {
                             graph.settings.save(v.settings)
                             Scheduler.ensureScheduled(context)
+                            Scheduler.refreshNow(context)      // survives the user leaving this screen mid-test
                             status = when (val result = graph.sync().refresh()) {
                                 is SyncResult.Failed -> result.error.userMessage
                                 SyncResult.Updated -> graph.cache.load().history?.snapshots?.lastOrNull()
