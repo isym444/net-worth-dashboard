@@ -9,23 +9,23 @@ sealed interface Reach {
     data class In(val months: Int, val age: Int) : Reach
     data object Never : Reach
 
-    /** Same wording as the dashboard: "Reached (age 30)", "4y 7m (age 34)", "100y+". */
+    /** Japanese wording: "達成 (30歳)", "4年7か月 (34歳)", "100年以上". */
     fun text(): String = when (this) {
-        is Reached -> "Reached (age $age)"
-        is In -> "${months / 12}y ${months % 12}m (age $age)"
-        Never -> "100y+"
+        is Reached -> "達成 (${age}歳)"
+        is In -> "${months / 12}年${months % 12}か月 (${age}歳)"
+        Never -> "100年以上"
     }
 }
 
 /** Pure port of `timeToReachPortfolio` (dashboard.component.ts). */
 object Projection {
-    /** 0 if `current >= target`; null if not reached within [ProjectionConfig.MAX_MONTHS]. */
-    fun monthsToReach(current: Double, target: Double, monthlyContribution: Double): Int? {
+    /** 0 if `current >= target`; null if not reached within [maxMonths] (default [ProjectionConfig.MAX_MONTHS]). */
+    fun monthsToReach(current: Double, target: Double, monthlyContribution: Double, maxMonths: Int = ProjectionConfig.MAX_MONTHS): Int? {
         if (current >= target) return 0
         val growth = (1 + ProjectionConfig.ANNUAL_RETURN).pow(1.0 / 12)
         var balance = current
         var months = 0
-        while (balance < target && months < ProjectionConfig.MAX_MONTHS) {
+        while (balance < target && months < maxMonths) {
             balance = balance * growth + monthlyContribution
             months++
         }

@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">Net Worth</string>
-    <string name="widget_description">Net worth and time to milestones</string>
+    <string name="app_name">純資産</string>
+    <string name="widget_description">純資産と目標までの期間</string>
 </resources>

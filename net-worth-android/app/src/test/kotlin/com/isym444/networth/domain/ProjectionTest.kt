@@ -14,31 +14,31 @@ class ProjectionTest {
 
     @Test fun matchesDashboardWithoutContributions() {
         assertEquals(Reach.In(123, 40), reach(50_000.0, 100_000.0, 0.0))
-        assertEquals("10y 3m (age 40)", reach(50_000.0, 100_000.0, 0.0).text())
-        assertEquals("4y 7m (age 34)", reach(184_320.0, 250_000.0, 0.0).text())
-        assertEquals("25y 0m (age 55)", reach(184_320.0, 1_000_000.0, 0.0).text())
+        assertEquals("10年3か月 (40歳)", reach(50_000.0, 100_000.0, 0.0).text())
+        assertEquals("4年7か月 (34歳)", reach(184_320.0, 250_000.0, 0.0).text())
+        assertEquals("25年0か月 (55歳)", reach(184_320.0, 1_000_000.0, 0.0).text())
     }
 
     @Test fun matchesDashboardWithContributions() {
         assertEquals(Reach.In(36, 33), reach(50_000.0, 100_000.0, 1_000.0))
-        assertEquals("3y 0m (age 33)", reach(50_000.0, 100_000.0, 1_000.0).text())
-        assertEquals("2y 6m (age 32)", reach(184_320.0, 250_000.0, 1_000.0).text())
-        assertEquals("15y 4m (age 45)", reach(184_320.0, 1_000_000.0, 1_500.0).text())
+        assertEquals("3年0か月 (33歳)", reach(50_000.0, 100_000.0, 1_000.0).text())
+        assertEquals("2年6か月 (32歳)", reach(184_320.0, 250_000.0, 1_000.0).text())
+        assertEquals("15年4か月 (45歳)", reach(184_320.0, 1_000_000.0, 1_500.0).text())
     }
 
     @Test fun alreadyReachedIncludesEqualAndAbove() {
         assertEquals(Reach.Reached(30), reach(100_000.0, 100_000.0, 0.0))
-        assertEquals("Reached (age 30)", reach(250_000.0, 100_000.0, 0.0).text())
+        assertEquals("達成 (30歳)", reach(250_000.0, 100_000.0, 0.0).text())
     }
 
     @Test fun justUnderTheTargetTakesOneMonth() {
-        assertEquals("0y 1m (age 30)", reach(99_999.99, 100_000.0, 0.0).text())
+        assertEquals("0年1か月 (30歳)", reach(99_999.99, 100_000.0, 0.0).text())
     }
 
     @Test fun neverWhenNotReachableWithinTheCap() {
         assertEquals(Reach.Never, reach(1_000.0, 1_000_000.0, 0.0))
-        assertEquals("100y+", reach(1_000.0, 1_000_000.0, 0.0).text())
-        assertEquals("100y+", reach(0.0, 100_000.0, 0.0).text())
+        assertEquals("100年以上", reach(1_000.0, 1_000_000.0, 0.0).text())
+        assertEquals("100年以上", reach(0.0, 100_000.0, 0.0).text())
         assertNull(Projection.monthsToReach(0.0, 100_000.0, 0.0))
     }
 

@@ -7,37 +7,47 @@ import kotlin.math.absoluteValue
 import kotlin.math.roundToLong
 
 object Money {
-    /** Known symbols; anything else is shown as its code plus a space ("CHF 1,234"); blank gets no symbol. */
-    fun symbol(code: String): String {
+    /**
+     * The currency as a Japanese suffix ("ポンド"), appended after the amount. Unknown currencies use their
+     * code with a leading space (" CHF"); blank gets no unit.
+     */
+    fun unit(code: String): String {
         val c = code.trim().uppercase(Locale.ROOT)
         return when (c) {
             "" -> ""
-            "GBP" -> "£"
-            "EUR" -> "€"
-            "USD" -> "$"
-            "JPY" -> "¥"
-            "MXN" -> "MX$"
-            else -> "$c "
+            "GBP" -> "ポンド"
+            "EUR" -> "ユーロ"
+            "USD" -> "ドル"
+            "JPY" -> "円"
+            "MXN" -> "ペソ"
+            else -> " $c"
         }
     }
 
-    /** Whole units with grouping: "£184,320", "-£1,235". Never prints "-£0". */
-    fun full(amount: Double, symbol: String): String {
+    /** Whole units with grouping and no currency: "184,320", "-1,235". Never prints "-0". */
+    fun number(amount: Double): String {
         val r = amount.roundToLong()
         val sign = if (r < 0) "-" else ""
-        return sign + symbol + String.format(Locale.UK, "%,d", r.absoluteValue)
+        return sign + String.format(Locale.UK, "%,d", r.absoluteValue)
     }
 
-    /** Short form for tight spaces: "£100k", "£1.7m", "£999", "-£250k". */
-    fun compact(amount: Double, symbol: String): String {
+    /** Whole units with grouping: "184,320ポンド", "-1,235ポンド". */
+    fun full(amount: Double, unit: String): String = number(amount) + unit
+
+    /**
+     * Short form in Japanese units for tight spaces: "10万ポンド", "6.5万ポンド", "100万ポンド", "1億ポンド", "999ポンド".
+     * 万 = 10,000 and 億 = 100,000,000.
+     */
+    fun compact(amount: Double, unit: String): String {
         val a = amount.absoluteValue
+        val wan = BigDecimal.valueOf(a / 10_000).setScale(1, RoundingMode.HALF_UP)
         val body = when {
-            a >= 1_000_000 -> BigDecimal.valueOf(a / 1_000_000).setScale(2, RoundingMode.HALF_UP)
-                .stripTrailingZeros().toPlainString() + "m"
-            a >= 1_000 -> (a / 1_000).roundToLong().toString() + "k"
-            else -> a.roundToLong().toString()
+            wan >= BigDecimal(10_000) -> BigDecimal.valueOf(a / 100_000_000).setScale(2, RoundingMode.HALF_UP)
+                .stripTrailingZeros().toPlainString() + "億"
+            wan.signum() > 0 && a >= 10_000 -> wan.stripTrailingZeros().toPlainString() + "万"
+            else -> String.format(Locale.UK, "%,d", a.roundToLong())
         }
         val sign = if (amount < 0 && body != "0") "-" else ""
-        return sign + symbol + body
+        return sign + body + unit
     }
 }

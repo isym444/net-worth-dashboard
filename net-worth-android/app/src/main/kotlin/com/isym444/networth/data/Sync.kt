@@ -27,18 +27,14 @@ class Sync(
         val api = source() ?: return SyncResult.Failed(ApiError.NotConfigured())
         return try {
             val fresh = api.history()
-            // /history returns every daily snapshot; the widget only needs the latest two (headline + change).
-            val trimmed = fresh.copy(snapshots = fresh.snapshots.takeLast(KEEP_SNAPSHOTS))
-            cache.save(CacheSnapshot(fetchedAt = clock(), history = trimmed))
+            // Keep every snapshot /history returns: the change lines, all-time high and trend chart need the whole history.
+            // It is small (the API thins old data, and `Snapshot` decodes only four fields).
+            cache.save(CacheSnapshot(fetchedAt = clock(), history = fresh))
             SyncResult.Updated
         } catch (e: ApiError) {
             SyncResult.Failed(e)
         } catch (e: IOException) {          // only the cache write can throw this (ApiClient maps its own I/O errors)
             SyncResult.Failed(ApiError.Storage(e))
         }
-    }
-
-    companion object {
-        const val KEEP_SNAPSHOTS = 2
     }
 }

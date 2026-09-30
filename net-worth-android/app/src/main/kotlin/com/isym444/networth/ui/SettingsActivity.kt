@@ -107,7 +107,7 @@ private fun SettingsScreen() {
                             status = when (val result = graph.sync().refresh()) {
                                 is SyncResult.Failed -> result.error.userMessage
                                 SyncResult.Updated -> graph.cache.load().history?.snapshots?.lastOrNull()
-                                    ?.let { "OK — latest ${Money.full(it.grandTotal, Money.symbol(it.currency))}" }
+                                    ?.let { "OK — latest ${Money.full(it.grandTotal, Money.unit(it.currency))}" }
                                     ?: "OK — no snapshots yet"
                             }
                             WidgetUpdater.refreshAll(context)

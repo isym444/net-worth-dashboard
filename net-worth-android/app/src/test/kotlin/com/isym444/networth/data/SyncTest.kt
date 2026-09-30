@@ -24,7 +24,7 @@ class SyncTest {
         monthlyContribution = 1000.0,
     )
 
-    @Test fun successKeepsOnlyTheLastTwoSnapshotsAndStampsFetchTime() {
+    @Test fun successKeepsTheWholeHistoryAndStampsFetchTime() {
         val cache = cache()
         val results = mutableListOf<Pair<SyncResult, Long>>()
         val sync = Sync(cache, { source { history(1.0, 2.0, 3.0, 4.0) } }, clock = { 777L }, onResult = { r, t -> results += r to t })
@@ -33,7 +33,7 @@ class SyncTest {
 
         val saved = cache.load()
         assertEquals(777L, saved.fetchedAt)
-        assertEquals(listOf(3.0, 4.0), saved.history!!.snapshots.map { it.grandTotal })
+        assertEquals(listOf(1.0, 2.0, 3.0, 4.0), saved.history!!.snapshots.map { it.grandTotal })
         assertEquals(9.0, saved.history!!.estimatedNetWorth1y!!, 0.0)          // projections are preserved
         assertEquals(listOf<Pair<SyncResult, Long>>(SyncResult.Updated to 777L), results)
     }

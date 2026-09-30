@@ -58,38 +58,38 @@ class WidgetModelTest {
         assertEquals(WidgetState.NotConfigured, build(null, settings = AppSettings()))
 
     @Test fun waitingForFirstSyncWhenConfiguredButNothingCached() =
-        assertEquals(WidgetState.Empty("Waiting for first sync"), build(null))
+        assertEquals(WidgetState.Empty("初回の同期を待っています"), build(null))
 
     @Test fun aRejectedKeyBeforeAnySyncSaysSo() {
         val s = build(null, status = rejected) as WidgetState.Empty
-        assertTrue(s.message, s.message.contains("Key rejected"))
+        assertTrue(s.message, s.message.contains("キーが拒否されました"))
     }
 
     @Test fun aBrandNewDatabaseShowsNoSnapshotsYet() =
-        assertEquals(WidgetState.Empty("No snapshots yet"), build(history()))
+        assertEquals(WidgetState.Empty("データがまだありません"), build(history()))
 
     // ---- headline and change ---------------------------------------------------------------------------
 
     @Test fun headlineUsesTheLatestSnapshotAndItsCurrency() {
-        assertEquals("£184,320", ready(history(183_000.0, 184_320.25)).headline)
-        assertEquals("€1,000", ready(history(1_000.0, currency = "EUR")).headline)
+        assertEquals("184,320ポンド", ready(history(183_000.0, 184_320.25)).headline)
+        assertEquals("1,000ユーロ", ready(history(1_000.0, currency = "EUR")).headline)
     }
 
     @Test fun changeUpAgainstThePreviousSnapshot() {
         val s = ready(history(184_320.0, 185_554.4))
-        assertEquals("+£1,234 (+0.7%)", s.change)
+        assertEquals("+1,234ポンド (+0.7%)", s.change)
         assertEquals(true, s.changeUp)
     }
 
     @Test fun changeDown() {
         val s = ready(history(100_000.0, 99_500.0))
-        assertEquals("-£500 (-0.5%)", s.change)
+        assertEquals("-500ポンド (-0.5%)", s.change)
         assertEquals(false, s.changeUp)
     }
 
     @Test fun noChange() {
         val s = ready(history(100_000.0, 100_000.0))
-        assertEquals("No change", s.change)
+        assertEquals("変化なし", s.change)
         assertNull(s.changeUp)
     }
 
@@ -100,33 +100,33 @@ class WidgetModelTest {
     }
 
     @Test fun changeFromAZeroBaselineOmitsThePercentage() =
-        assertEquals("+£500", ready(history(0.0, 500.0)).change)
+        assertEquals("+500ポンド", ready(history(0.0, 500.0)).change)
 
     // ---- milestones ------------------------------------------------------------------------------------
 
     @Test fun milestonesWithContributionsMatchTheDashboard() {
         val m = ready(history(183_000.0, 184_320.0)).milestones
-        assertEquals(listOf("£100k", "£250k", "£500k", "£750k", "£1m"), m.map { it.label })
-        assertEquals("Reached (age 30)", m[0].value)
+        assertEquals(listOf("10万ポンド", "25万ポンド", "50万ポンド", "75万ポンド", "100万ポンド"), m.map { it.label })
+        assertEquals("達成 (30歳)", m[0].value)
         assertTrue(m[0].reached)
-        assertEquals("2y 6m (age 32)", m[1].value)
+        assertEquals("2年6か月 (32歳)", m[1].value)
         assertEquals(false, m[1].reached)
     }
 
     @Test fun milestonesWithoutContributionsMatchTheDashboard() {
         val m = ready(history(184_320.0), WidgetConfig(withContributions = false)).milestones
-        assertEquals("4y 7m (age 34)", m[1].value)
-        assertEquals("25y 0m (age 55)", m[4].value)
+        assertEquals("4年7か月 (34歳)", m[1].value)
+        assertEquals("25年0か月 (55歳)", m[4].value)
     }
 
     @Test fun aMissingMonthlyContributionActsLikeZero() {
         val m = ready(history(184_320.0, monthly = null)).milestones
-        assertEquals("4y 7m (age 34)", m[1].value)
+        assertEquals("4年7か月 (34歳)", m[1].value)
     }
 
     @Test fun nextMilestonesSkipsTheOnesAlreadyReached() {
         val s = ready(history(184_320.0))
-        assertEquals(listOf("£250k", "£500k", "£750k"), s.nextMilestones(3).map { it.label })
+        assertEquals(listOf("25万ポンド", "50万ポンド", "75万ポンド"), s.nextMilestones(3).map { it.label })
     }
 
     @Test fun nextMilestonesIsEmptyWhenEverythingIsReached() =
@@ -137,11 +137,11 @@ class WidgetModelTest {
     @Test fun projectionsFollowTheContributionSetting() {
         val h = history(184_320.0)
         assertEquals(
-            listOf("Age 40" to "£1m", "Age 50" to "£1.7m", "Age 60" to "£2.9m", "Age 65" to "£4.1m"),
+            listOf("40歳" to "100万ポンド", "50歳" to "170万ポンド", "60歳" to "290万ポンド", "65歳" to "410万ポンド"),
             ready(h).projections.map { it.label to it.value },
         )
         assertEquals(
-            listOf("Age 40" to "£900k", "Age 50" to "£1.5m", "Age 60" to "£2.5m", "Age 65" to "£3.5m"),
+            listOf("40歳" to "90万ポンド", "50歳" to "150万ポンド", "60歳" to "250万ポンド", "65歳" to "350万ポンド"),
             ready(h, WidgetConfig(withContributions = false)).projections.map { it.label to it.value },
         )
     }
@@ -153,49 +153,165 @@ class WidgetModelTest {
         assertEquals(5, s.milestones.size)          // milestones still work without projections
     }
 
-    @Test fun oneYearEstimateIsCompact() = assertEquals("£210k", ready(history(184_320.0)).oneYear)
+    @Test fun oneYearEstimateIsCompact() = assertEquals("21万ポンド", ready(history(184_320.0)).oneYear)
 
     // ---- zero, negative, odd currencies ----------------------------------------------------------------
 
     @Test fun negativeNetWorthFormatsWithAMinusAndNeverReachesWithoutContributions() {
         val s = ready(history(-1_500.0), WidgetConfig(withContributions = false))
-        assertEquals("-£1,500", s.headline)
-        assertTrue(s.milestones.all { it.value == "100y+" && !it.reached })
+        assertEquals("-1,500ポンド", s.headline)
+        assertTrue(s.milestones.all { it.value == "100年以上" && !it.reached })
     }
 
     @Test fun zeroNetWorthDoesNotCrash() {
         val s = ready(history(0.0), WidgetConfig(withContributions = false))
-        assertEquals("£0", s.headline)
-        assertEquals("100y+", s.milestones[0].value)
+        assertEquals("0ポンド", s.headline)
+        assertEquals("100年以上", s.milestones[0].value)
     }
 
-    @Test fun anUnknownCurrencyUsesItsCode() = assertEquals("CHF 1,000", ready(history(1_000.0, currency = "CHF")).headline)
+    @Test fun anUnknownCurrencyUsesItsCode() = assertEquals("1,000 CHF", ready(history(1_000.0, currency = "CHF")).headline)
 
-    @Test fun aBlankCurrencyHasNoSymbol() = assertEquals("1,000", ready(history(1_000.0, currency = "")).headline)
+    @Test fun aBlankCurrencyHasNoUnit() = assertEquals("1,000", ready(history(1_000.0, currency = "")).headline)
 
     // ---- freshness and hints ---------------------------------------------------------------------------
 
     @Test fun updatedTextIsRelative() {
-        assertEquals("Updated just now", ready(history(1.0), fetchedAt = nowMs - 20_000).updated)
-        assertEquals("Updated 5m ago", ready(history(1.0), fetchedAt = nowMs - 5 * 60_000).updated)
-        assertEquals("Updated 3h ago", ready(history(1.0), fetchedAt = nowMs - 3 * hour).updated)
-        assertEquals("Updated 2d ago", ready(history(1.0), fetchedAt = nowMs - 49 * hour).updated)
+        assertEquals("たった今更新", ready(history(1.0), fetchedAt = nowMs - 20_000).updated)
+        assertEquals("5分前に更新", ready(history(1.0), fetchedAt = nowMs - 5 * 60_000).updated)
+        assertEquals("3時間前に更新", ready(history(1.0), fetchedAt = nowMs - 3 * hour).updated)
+        assertEquals("2日前に更新", ready(history(1.0), fetchedAt = nowMs - 49 * hour).updated)
     }
 
     @Test fun aClockSkewedFutureFetchTimeReadsAsJustNow() =
-        assertEquals("Updated just now", ready(history(1.0), fetchedAt = nowMs + hour).updated)
+        assertEquals("たった今更新", ready(history(1.0), fetchedAt = nowMs + hour).updated)
 
     @Test fun noHintWhenFresh() = assertNull(ready(history(1.0), fetchedAt = nowMs - 5 * hour).hint)
 
     @Test fun staleDataGetsAnOutOfDateHintButStaysOnScreen() {
         val s = ready(history(184_320.0), fetchedAt = nowMs - 7 * hour)
-        assertEquals("Out of date — can't reach the server", s.hint)
-        assertEquals("£184,320", s.headline)
+        assertEquals("古いデータ — サーバーに接続できません", s.hint)
+        assertEquals("184,320ポンド", s.headline)
     }
 
     @Test fun aRejectedKeyKeepsTheLastDataAndShowsAHint() {
         val s = ready(history(184_320.0), status = rejected)
-        assertEquals("Key rejected — update it in the app", s.hint)
-        assertEquals("£184,320", s.headline)
+        assertEquals("キーが拒否されました — アプリで更新してください", s.hint)
+        assertEquals("184,320ポンド", s.headline)
+    }
+
+    // ---- assumptions line ------------------------------------------------------------------------------
+
+    @Test fun assumptionMentionsTheReturnAndTheMonthlyContribution() {
+        assertEquals("年7%運用・毎月1,000ポンド積立", ready(history(184_320.0)).assumption)
+        assertEquals("年7%運用・積立なし", ready(history(184_320.0), WidgetConfig(withContributions = false)).assumption)
+        assertEquals("年7%運用・積立なし", ready(history(184_320.0, monthly = null)).assumption)
+    }
+
+    @Test fun headlineIsSplitIntoAmountAndUnit() {
+        val s = ready(history(184_320.0))
+        assertEquals("184,320", s.headlineAmount)
+        assertEquals("ポンド", s.headlineUnit)
+    }
+
+    // ---- wide layout extras ----------------------------------------------------------------------------
+
+    private fun dated(vararg daysAgoAndTotal: Pair<Int, Double>) = HistoryResponse(
+        snapshots = daysAgoAndTotal.mapIndexed { i, (d, t) ->
+            Snapshot(id = i.toLong(), timestamp = now.minusSeconds(d * 86_400L).toString(), currency = "GBP", grandTotal = t)
+        },
+        estimatedNetWorth1y = 210_000.0, monthlyContribution = 1_000.0,
+    )
+
+    @Test fun nextGoalShowsBothProgressBars() {
+        val g = ready(history(48_000.0)).nextGoal!!            // 7% a year, £1,000 a month
+        assertEquals("10万ポンド", g.label)
+        assertEquals("59.1%", g.growth.percent)
+        assertEquals(0.591f, g.growth.fraction, 0.001f)
+        assertEquals("53.6%", g.time!!.percent)
+        assertEquals("あと3年1か月", g.remaining)                 // 37 months, the same figure as the milestone rows
+    }
+
+    @Test fun nextGoalProgressDoesNotDependOnHowLongYouHaveBeenTracking() {
+        val young = ready(dated(3 to 40_000.0, 0 to 48_000.0)).nextGoal!!
+        val old = ready(dated(2_280 to 1_900.0, 0 to 48_000.0)).nextGoal!!
+        assertEquals(young, old)
+    }
+
+    @Test fun withoutContributionsTimeProgressIsNotAvailable() {
+        val g = ready(history(48_000.0), WidgetConfig(withContributions = false)).nextGoal!!
+        assertEquals("100.0%", g.growth.percent)
+        assertNull(g.time)
+    }
+
+    @Test fun nextGoalWithNoWayToReachItSaysSo() {
+        val g = ready(history(0.0), WidgetConfig(withContributions = false)).nextGoal!!
+        assertEquals("0.0%", g.growth.percent)
+        assertEquals("あと100年以上", g.remaining)
+    }
+
+    @Test fun nextGoalSkipsReachedMilestonesAndIsNullWhenAllAreReached() {
+        assertEquals("25万ポンド", ready(history(184_320.0)).nextGoal!!.label)
+        assertNull(ready(history(2_000_000.0)).nextGoal)
+    }
+
+    @Test fun periodChangesCompareAgainstTheLatestSnapshotAtOrBeforeEachCutoff() {
+        val s = ready(dated(40 to 40_000.0, 30 to 44_000.0, 8 to 46_000.0, 0 to 48_000.0))
+        assertEquals(listOf("7日間", "30日間", "全期間"), s.periodChanges.map { it.label })
+        assertEquals("+2,000ポンド (+4.3%)", s.periodChanges[0].text)     // 8 days ago: 46,000
+        assertEquals("+4,000ポンド (+9.1%)", s.periodChanges[1].text)     // 30 days ago: 44,000
+        assertEquals("+8,000ポンド (+20.0%)", s.periodChanges[2].text)    // first snapshot: 40,000
+        assertTrue(s.periodChanges.all { it.up == true })
+    }
+
+    @Test fun periodsLongerThanTheHistoryAreOmitted() {
+        val s = ready(dated(3 to 100.0, 0 to 90.0))
+        assertEquals(listOf("全期間"), s.periodChanges.map { it.label })
+        assertEquals(false, s.periodChanges[0].up)
+    }
+
+    @Test fun aSingleSnapshotHasNoPeriodChangesAndUnparseableTimestampsAreIgnored() {
+        assertTrue(ready(dated(0 to 100.0)).periodChanges.isEmpty())
+        val bad = HistoryResponse(snapshots = listOf(Snapshot(1, "nope", "GBP", 1.0), Snapshot(2, "nah", "GBP", 2.0)))
+        val s = ready(bad)
+        assertTrue(s.periodChanges.isEmpty())
+        assertTrue(s.trend.isEmpty())
+        assertEquals("", s.trendSpan)
+    }
+
+    @Test fun peakIsTheHighestSnapshotEver() =
+        assertEquals("最高値 50,000ポンド", ready(dated(9 to 40_000.0, 5 to 50_000.0, 0 to 48_000.0)).peak)
+
+    @Test fun trendKeepsTheLastTwoYearsOldestFirstWithItsSpan() {
+        val s = ready(dated(900 to 1.0, 400 to 2.0, 5 to 3.0, 0 to 4.0))
+        assertEquals(listOf(2.0, 3.0, 4.0), s.trend.map { it.total })       // the 900-day-old snapshot is outside the window
+        assertEquals(listOf(true), listOf(s.trend.zipWithNext().all { (a, b) -> a.epochMs < b.epochMs }))
+        assertEquals("13か月間", s.trendSpan)   // 400 days ago to today is 400 days, 13 months
+    }
+
+    @Test fun trendIsThinnedEvenlyKeepingTheFirstAndLastPoint() {
+        val days = (0..599).map { (599 - it) to it.toDouble() }.toTypedArray()
+        val s = ready(dated(*days))
+        assertEquals(WidgetModel.TREND_MAX_POINTS, s.trend.size)
+        assertEquals(0.0, s.trend.first().total, 0.0)
+        assertEquals(599.0, s.trend.last().total, 0.0)
+    }
+
+    @Test fun trendSpanIsWrittenInDaysMonthsOrYears() {
+        assertEquals("12日間", ready(dated(12 to 1.0, 0 to 2.0)).trendSpan)
+        assertEquals("5か月間", ready(dated(152 to 1.0, 0 to 2.0)).trendSpan)
+        assertEquals("2年間", ready(dated(730 to 1.0, 0 to 2.0)).trendSpan)
+    }
+
+    @Test fun projectionTableShowsBothScenarios() {
+        val t = ready(history(184_320.0)).projectionTable
+        assertEquals(listOf("40歳", "50歳", "60歳", "65歳"), t.map { it.label })
+        assertEquals("100万ポンド", t[0].withContributions)
+        assertEquals("90万ポンド", t[0].withoutContributions)
+    }
+
+    @Test fun projectionTableUsesADashForAMissingScenario() {
+        val t = ready(history(184_320.0, wc40 = null)).projectionTable
+        assertEquals("-", t[0].withContributions)
+        assertEquals("90万ポンド", t[0].withoutContributions)
     }
 }
