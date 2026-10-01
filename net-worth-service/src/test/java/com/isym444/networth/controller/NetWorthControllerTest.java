@@ -30,7 +30,7 @@ class NetWorthControllerTest {
     @Test
     void history_delegatesToHistoryServiceWithTheRequestedCurrency() {
         NetWorthHistoryResponse expected =
-                new NetWorthHistoryResponse(List.of(), null, null, null, null, null, null, null, null, null, null);
+                new NetWorthHistoryResponse(List.of(), null, null, null, null, null, null, null, null, null, null, null);
         RecordingHistoryService historyService = new RecordingHistoryService(expected);
 
         NetWorthController controller = new NetWorthController(
@@ -56,7 +56,7 @@ class NetWorthControllerTest {
         // fresh history fetch now, not from PortfolioProjectionService directly — nothing
         // about the estimate is persisted, so there's nothing to go stale or miss a row.
         NetWorthHistoryResponse freshHistory = new NetWorthHistoryResponse(
-                List.of(), 1.0, 2.0, 3.0, 4.0, 100.0, 200.0, 300.0, 400.0, 999.0, 50.0);
+                List.of(), 1.0, 2.0, 3.0, 4.0, 100.0, 200.0, 300.0, 400.0, 999.0, 50.0, 2000.0);
         RecordingHistoryService historyService = new RecordingHistoryService(freshHistory);
         PortfolioProjectionService portfolioProjectionService = mock(PortfolioProjectionService.class);
         when(portfolioProjectionService.updateMonthlyContribution(50.0)).thenReturn(50.0);

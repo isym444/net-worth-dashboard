@@ -45,6 +45,7 @@ public enum WidgetState: Equatable {
         public let projections: [ProjectionRow]
         public let projectionTable: [ProjectionCompareRow]
         public let nextGoal: NextGoal?               // nil when every milestone is reached
+        public let breakeven: NextGoal?              // net worth where a month of return >= the monthly contribution; nil without contributions
         public let periodChanges: [PeriodChange]     // 7日間 / 30日間 / 全期間, where history allows
         public let peak: String?                     // "最高値 49,153ポンド"
         public let trend: [TrendPoint]               // totals over the last two years, oldest first
@@ -105,7 +106,9 @@ public enum WidgetModel {
         }
 
         let daysToPayday = Payday.daysUntilNext(from: now, calendar: calendar)
-        let peak = points.max(by: { $0.total < $1.total }).map { "最高値 " + Money.full($0.total, unit: unit) }
+        // The server thins old snapshots (one per past month), so the real peak can be missing from `points`; it sends it separately.
+        let peakTotal = [points.map(\.total).max(), history.peakNetWorth].compactMap { $0 }.max()
+        let peak = peakTotal.map { "最高値 " + Money.full($0, unit: unit) }
 
         return .ready(.init(
             headlineAmount: Money.number(latest.grandTotal),
@@ -126,6 +129,7 @@ public enum WidgetModel {
             projections: projections(history, withContributions: config.withContributions, unit: unit),
             projectionTable: projectionTable(history, unit: unit),
             nextGoal: nextGoal(total: latest.grandTotal, unit: unit, contribution: contribution),
+            breakeven: breakeven(total: latest.grandTotal, unit: unit, contribution: contribution),
             periodChanges: periodChanges(points, unit: unit),
             peak: peak,
             trend: trendPoints.map { TrendPoint(date: $0.date, total: $0.total) },
@@ -204,6 +208,18 @@ public enum WidgetModel {
         let remaining = monthsLeft.map { "あと\($0 / 12)年\($0 % 12)か月" } ?? "あと100年以上"
         return NextGoal(
             label: Money.compact(target, unit: unit), remaining: remaining,
+            growth: goalBar(progress.growthShare), time: progress.timeShare.map(goalBar))
+    }
+
+    /// The net worth at which one month of growth equals the monthly contribution (`c / r`, same monthly rate as the projections),
+    /// with the same two progress bars as a milestone. `remaining` is the money still to go, or "達成済み".
+    private static func breakeven(total: Double, unit: String, contribution: Double) -> NextGoal? {
+        guard contribution > 0 else { return nil }
+        let target = Projection.breakevenNetWorth(monthlyContribution: contribution)
+        let progress = GoalProgress.compute(p: total, t: target, c: contribution, annualReturn: ProjectionConfig.annualReturn)
+        return NextGoal(
+            label: Money.compact(target, unit: unit),
+            remaining: total >= target ? "達成済み" : "あと" + Money.compact(target - total, unit: unit),
             growth: goalBar(progress.growthShare), time: progress.timeShare.map(goalBar))
     }
 

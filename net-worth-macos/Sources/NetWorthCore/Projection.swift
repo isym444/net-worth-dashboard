@@ -28,6 +28,11 @@ public enum Reach: Equatable {
 
 /// Pure port of `timeToReachPortfolio` (dashboard.component.ts).
 public enum Projection {
+    /// The net worth at which one month of growth equals the monthly contribution (`c / r`; port of `contributionBreakevenNetWorth`).
+    public static func breakevenNetWorth(monthlyContribution: Double) -> Double {
+        monthlyContribution / (pow(1 + ProjectionConfig.annualReturn, 1.0 / 12) - 1)
+    }
+
     /// 0 if `current >= target`; nil if not reached within `maxMonths` (default `ProjectionConfig.maxMonths`).
     public static func monthsToReach(
         current: Double, target: Double, monthlyContribution: Double, maxMonths: Int = ProjectionConfig.maxMonths

@@ -85,6 +85,40 @@ final class WidgetModelTests: XCTestCase {
         XCTAssertNil(old.amexDebtTotal)
     }
 
+    // MARK: peak
+
+    func testPeakUsesTheServersPeakWhenTheThinnedSnapshotsMissIt() {
+        var h = history(48_000, 49_000)
+        h.peakNetWorth = 52_000
+        XCTAssertEqual(ready(h).peak, "最高値 52,000ポンド")
+    }
+
+    func testPeakFallsBackToTheSnapshotsWhenTheServerSendsNone() {
+        XCTAssertEqual(ready(history(48_000, 49_000)).peak, "最高値 49,000ポンド")
+    }
+
+    // MARK: breakeven
+
+    func testBreakevenIsTheNetWorthWhereAMonthOfReturnEqualsTheContribution() {
+        // 1,000 / (1.07^(1/12) - 1) = 176,865; from 49,000 that is 127,865 to go.
+        let b = ready(history(49_000)).breakeven
+        XCTAssertEqual(b?.label, "17.7万ポンド")
+        XCTAssertEqual(b?.remaining, "あと12.8万ポンド")
+        XCTAssertNotNil(b?.growth)
+        XCTAssertNotNil(b?.time)
+    }
+
+    func testBreakevenIsReachedOnceNetWorthPassesIt() {
+        let b = ready(history(200_000)).breakeven
+        XCTAssertEqual(b?.remaining, "達成済み")
+        XCTAssertEqual(b?.growth.fraction, 1)
+    }
+
+    func testNoBreakevenWithoutContributions() {
+        XCTAssertNil(ready(history(49_000), config: WidgetConfig(withContributions: false)).breakeven)
+        XCTAssertNil(ready(history(49_000, monthly: 0)).breakeven)
+    }
+
     // MARK: timestamps
 
     func testParsesTimestampsWithAndWithoutFractionalSeconds() {

@@ -127,6 +127,20 @@ struct NextGoalBlock: View {
     }
 }
 
+/// "Where the portfolio's monthly return overtakes your monthly contribution", with the same two bars as a milestone.
+struct BreakevenBlock: View {
+    @Environment(\.colorScheme) private var scheme
+    let goal: NextGoal
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Label11("運用益が積立額を超える純資産")
+            Label11("\(goal.label)・\(goal.remaining)")
+            GoalBarRow(label: "資産の寄与", bar: goal.growth, color: Palette(scheme).up)
+            GoalBarRow(label: "時間の進捗", bar: goal.time, color: Palette(scheme).accent)
+        }
+    }
+}
+
 struct PeriodRow: View {
     @Environment(\.colorScheme) private var scheme
     let change: PeriodChange

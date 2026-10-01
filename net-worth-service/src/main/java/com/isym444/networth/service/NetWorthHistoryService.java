@@ -47,13 +47,13 @@ public class NetWorthHistoryService {
         String resolved = resolveCurrency(currency);
         if (resolved == null) {
             return new NetWorthHistoryResponse(
-                    List.of(), null, null, null, null, null, null, null, null, null, monthlyContribution);
+                    List.of(), null, null, null, null, null, null, null, null, null, monthlyContribution, null);
         }
 
         List<NetWorthSnapshot> snapshots = repository.findByCurrencyOrderByTimestampAsc(resolved);
         if (snapshots.isEmpty()) {
             return new NetWorthHistoryResponse(
-                    List.of(), null, null, null, null, null, null, null, null, null, monthlyContribution);
+                    List.of(), null, null, null, null, null, null, null, null, null, monthlyContribution, null);
         }
 
         double baseline = snapshots.get(snapshots.size() - 1).getGrandTotal();
@@ -73,7 +73,8 @@ public class NetWorthHistoryService {
                 portfolioProjectionService.calculateEstimatedNetWorthWithContributions(baseline, monthlyContribution, yearsAt60),
                 portfolioProjectionService.calculateEstimatedNetWorthWithContributions(baseline, monthlyContribution, yearsAt65),
                 portfolioProjectionService.calculateEstimatedNetWorth1y(baseline, monthlyContribution),
-                monthlyContribution);
+                monthlyContribution,
+                snapshots.stream().mapToDouble(NetWorthSnapshot::getGrandTotal).max().orElse(baseline));
     }
 
     /**

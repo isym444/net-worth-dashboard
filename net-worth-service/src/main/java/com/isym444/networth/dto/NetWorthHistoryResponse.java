@@ -15,5 +15,7 @@ public record NetWorthHistoryResponse(
         Double expectedNetWorthWithContributionsAt60,
         Double expectedNetWorthWithContributionsAt65,
         Double estimatedNetWorth1y,
-        Double monthlyContribution) {
+        Double monthlyContribution,
+        // Highest grand total over ALL snapshots; `snapshots` above is thinned, so its max can miss the real peak.
+        Double peakNetWorth) {
 }

@@ -11,7 +11,7 @@ Spec and plan: `docs/superpowers/`.
 - `App/`: the settings window. `Widget/`: the WidgetKit extension. `project.yml`: the XcodeGen project.
 
 ## Build, install
-    swift test                 # 128 unit tests, no Xcode project needed
+    swift test                 # 133 unit tests, no Xcode project needed
     ./install.sh               # xcodegen + xcodebuild (signed with your Apple Development identity) + install + open
 
 Needs Xcode, XcodeGen (`brew install xcodegen`) and an Apple ID added under Xcode → Settings → Accounts

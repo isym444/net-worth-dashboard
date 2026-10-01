@@ -48,6 +48,7 @@ public struct HistoryResponse: Codable, Equatable {
     public var expectedNetWorthWithContributionsAt65: Double?
     public var estimatedNetWorth1y: Double?
     public var monthlyContribution: Double?
+    public var peakNetWorth: Double?                     // highest total over ALL snapshots; `snapshots` is thinned by the server
 
     public init(
         snapshots: [Snapshot],
@@ -55,7 +56,7 @@ public struct HistoryResponse: Codable, Equatable {
         expectedNetWorthAt60: Double? = nil, expectedNetWorthAt65: Double? = nil,
         expectedNetWorthWithContributionsAt40: Double? = nil, expectedNetWorthWithContributionsAt50: Double? = nil,
         expectedNetWorthWithContributionsAt60: Double? = nil, expectedNetWorthWithContributionsAt65: Double? = nil,
-        estimatedNetWorth1y: Double? = nil, monthlyContribution: Double? = nil
+        estimatedNetWorth1y: Double? = nil, monthlyContribution: Double? = nil, peakNetWorth: Double? = nil
     ) {
         self.snapshots = snapshots
         self.expectedNetWorthAt40 = expectedNetWorthAt40
@@ -68,6 +69,7 @@ public struct HistoryResponse: Codable, Equatable {
         self.expectedNetWorthWithContributionsAt65 = expectedNetWorthWithContributionsAt65
         self.estimatedNetWorth1y = estimatedNetWorth1y
         self.monthlyContribution = monthlyContribution
+        self.peakNetWorth = peakNetWorth
     }
 }
 
