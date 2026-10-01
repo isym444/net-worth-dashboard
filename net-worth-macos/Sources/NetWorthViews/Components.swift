@@ -31,6 +31,28 @@ struct ChangeLine: View {
     }
 }
 
+/// A line of secondary text whose number is drawn in a bold accent colour so it stands out (red when negative).
+struct StatLineView: View {
+    @Environment(\.colorScheme) private var scheme
+    let line: StatLine
+    var body: some View {
+        let palette = Palette(scheme)
+        (Text(line.lead).foregroundColor(palette.secondary)
+            + Text(line.value).fontWeight(.bold).foregroundColor(line.negative ? palette.down : palette.accent)
+            + Text(line.tail).foregroundColor(palette.secondary))
+            .font(.system(size: 12)).lineLimit(1).minimumScaleFactor(0.8)
+    }
+}
+
+/// Small widget only: days to payday and the daily spending allowance, with and without the money set aside to invest.
+struct PaydayAndSpendLines: View {
+    let state: WidgetState.Ready
+    var body: some View {
+        StatLineView(line: state.payday)
+        ForEach([state.maxDailySpend, state.maxDailySpendBuffer].compactMap { $0 }, id: \.text) { StatLineView(line: $0) }
+    }
+}
+
 struct Footer: View {
     @Environment(\.colorScheme) private var scheme
     let state: WidgetState.Ready
@@ -99,6 +121,20 @@ struct NextGoalBlock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Label11("\(goal.label)まで・\(goal.remaining)")
+            GoalBarRow(label: "資産の寄与", bar: goal.growth, color: Palette(scheme).up)
+            GoalBarRow(label: "時間の進捗", bar: goal.time, color: Palette(scheme).accent)
+        }
+    }
+}
+
+/// "Where the portfolio's monthly return overtakes your monthly contribution", with the same two bars as a milestone.
+struct BreakevenBlock: View {
+    @Environment(\.colorScheme) private var scheme
+    let goal: NextGoal
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Label11("運用益が積立額を超える純資産")
+            Label11("\(goal.label)・\(goal.remaining)")
             GoalBarRow(label: "資産の寄与", bar: goal.growth, color: Palette(scheme).up)
             GoalBarRow(label: "時間の進捗", bar: goal.time, color: Palette(scheme).accent)
         }

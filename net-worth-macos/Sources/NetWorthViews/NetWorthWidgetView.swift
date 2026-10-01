@@ -62,6 +62,7 @@ private struct SmallLayout: View {
             Label11("純資産")
             Headline(state: s, size: 24)
             ChangeLine(state: s)
+            PaydayAndSpendLines(state: s)
             Spacer(minLength: 4)
             Footer(state: s)
         }
@@ -137,10 +138,6 @@ private struct ExtraLargeLayout: View {
                     if let oneYear = s.oneYear {
                         Text("1年後の予想 ≈ \(oneYear)").font(.system(size: 12)).foregroundStyle(Palette(scheme).secondary).lineLimit(1)
                     }
-                    if let goal = s.nextGoal {
-                        Spacer().frame(height: 8)
-                        NextGoalBlock(goal: goal)
-                    }
                     if !s.periodChanges.isEmpty || s.peak != nil {
                         Spacer().frame(height: 8)
                         Label11("増減の推移")
@@ -149,8 +146,7 @@ private struct ExtraLargeLayout: View {
                             Text(peak).font(.system(size: 12)).foregroundStyle(Palette(scheme).secondary).lineLimit(1).padding(.vertical, 1.5)
                         }
                     }
-                    Spacer(minLength: 4)
-                    Footer(state: s)
+                    Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 VStack(alignment: .leading, spacing: 0) {
@@ -166,11 +162,18 @@ private struct ExtraLargeLayout: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            if s.trend.count >= 2 {
-                Spacer().frame(height: 6)
-                Label11("推移 (過去\(s.trendSpan))")
-                TrendChart(points: s.trend).frame(minHeight: 36, maxHeight: .infinity)
+            if s.nextGoal != nil || s.breakeven != nil {
+                // Both progress indicators side by side, in the same two columns as above.
+                Spacer().frame(height: 8)
+                HStack(alignment: .top, spacing: 18) {
+                    Group { if let goal = s.nextGoal { NextGoalBlock(goal: goal) } else { Color.clear.frame(height: 1) } }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Group { if let breakeven = s.breakeven { BreakevenBlock(goal: breakeven) } else { Color.clear.frame(height: 1) } }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
+            Spacer(minLength: 4)
+            Footer(state: s)
         }
     }
 }

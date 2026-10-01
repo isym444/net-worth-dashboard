@@ -6,15 +6,22 @@ public struct Snapshot: Codable, Equatable {
     public var timestamp: String
     public var currency: String
     public var grandTotal: Double
+    public var chaseTotal: Double?        // null on old snapshots, which predate the column
+    public var amexDebtTotal: Double?
 
-    public init(id: Int64 = 0, timestamp: String = "", currency: String = "GBP", grandTotal: Double = 0) {
+    public init(
+        id: Int64 = 0, timestamp: String = "", currency: String = "GBP", grandTotal: Double = 0,
+        chaseTotal: Double? = nil, amexDebtTotal: Double? = nil
+    ) {
         self.id = id
         self.timestamp = timestamp
         self.currency = currency
         self.grandTotal = grandTotal
+        self.chaseTotal = chaseTotal
+        self.amexDebtTotal = amexDebtTotal
     }
 
-    private enum CodingKeys: String, CodingKey { case id, timestamp, currency, grandTotal }
+    private enum CodingKeys: String, CodingKey { case id, timestamp, currency, grandTotal, chaseTotal, amexDebtTotal }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -22,6 +29,8 @@ public struct Snapshot: Codable, Equatable {
         timestamp = try c.decodeIfPresent(String.self, forKey: .timestamp) ?? ""
         currency = try c.decodeIfPresent(String.self, forKey: .currency) ?? "GBP"
         grandTotal = try c.decodeIfPresent(Double.self, forKey: .grandTotal) ?? 0
+        chaseTotal = try c.decodeIfPresent(Double.self, forKey: .chaseTotal)
+        amexDebtTotal = try c.decodeIfPresent(Double.self, forKey: .amexDebtTotal)
     }
 }
 
@@ -39,6 +48,7 @@ public struct HistoryResponse: Codable, Equatable {
     public var expectedNetWorthWithContributionsAt65: Double?
     public var estimatedNetWorth1y: Double?
     public var monthlyContribution: Double?
+    public var peakNetWorth: Double?                     // highest total over ALL snapshots; `snapshots` is thinned by the server
 
     public init(
         snapshots: [Snapshot],
@@ -46,7 +56,7 @@ public struct HistoryResponse: Codable, Equatable {
         expectedNetWorthAt60: Double? = nil, expectedNetWorthAt65: Double? = nil,
         expectedNetWorthWithContributionsAt40: Double? = nil, expectedNetWorthWithContributionsAt50: Double? = nil,
         expectedNetWorthWithContributionsAt60: Double? = nil, expectedNetWorthWithContributionsAt65: Double? = nil,
-        estimatedNetWorth1y: Double? = nil, monthlyContribution: Double? = nil
+        estimatedNetWorth1y: Double? = nil, monthlyContribution: Double? = nil, peakNetWorth: Double? = nil
     ) {
         self.snapshots = snapshots
         self.expectedNetWorthAt40 = expectedNetWorthAt40
@@ -59,6 +69,7 @@ public struct HistoryResponse: Codable, Equatable {
         self.expectedNetWorthWithContributionsAt65 = expectedNetWorthWithContributionsAt65
         self.estimatedNetWorth1y = estimatedNetWorth1y
         self.monthlyContribution = monthlyContribution
+        self.peakNetWorth = peakNetWorth
     }
 }
 

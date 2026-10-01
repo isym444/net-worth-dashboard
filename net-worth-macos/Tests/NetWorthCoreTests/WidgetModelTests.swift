@@ -52,6 +52,73 @@ final class WidgetModelTests: XCTestCase {
         return r
     }
 
+    // MARK: daily spend
+
+    private func withBank(_ chase: Double?, _ amex: Double?) -> HistoryResponse {
+        HistoryResponse(snapshots: [Snapshot(
+            id: 1, timestamp: "2026-09-29T07:00:00Z", currency: "GBP", grandTotal: 50_000, chaseTotal: chase, amexDebtTotal: amex)])
+    }
+
+    func testMaxDailySpendWithAndWithoutTheInvestBuffer() {
+        // 2026-09-30 -> payday Fri 2026-10-23 = 23 days. (2,100 - 450) / 23 = 71.74; minus 400 buffer: 1,250 / 23 = 54.35. Subscriptions are not deducted.
+        let r = ready(withBank(2_100, 450))
+        XCTAssertEqual(r.daysToPayday, 23)
+        XCTAssertEqual(r.maxDailySpend?.text, "1日の上限 72ポンド")
+        XCTAssertEqual(r.maxDailySpendBuffer?.text, "400ポンド確保で 54ポンド")
+    }
+
+    func testMaxDailySpendCanGoNegative() {
+        XCTAssertEqual(ready(withBank(500, 450)).maxDailySpendBuffer?.text, "400ポンド確保で -15ポンド")
+    }
+
+    func testNoDailySpendWhenTheSnapshotLacksChaseOrAmex() {
+        XCTAssertNil(ready(withBank(nil, nil)).maxDailySpend)
+        XCTAssertNil(ready(withBank(2_100, nil)).maxDailySpendBuffer)
+    }
+
+    func testSnapshotDecodesChaseAndAmexAndToleratesTheirAbsence() throws {
+        let full = try JSONDecoder().decode(Snapshot.self, from: Data(#"{"grandTotal":1,"chaseTotal":2.5,"amexDebtTotal":3}"#.utf8))
+        XCTAssertEqual(full.chaseTotal, 2.5)
+        XCTAssertEqual(full.amexDebtTotal, 3)
+        let old = try JSONDecoder().decode(Snapshot.self, from: Data(#"{"grandTotal":1,"chaseTotal":null}"#.utf8))
+        XCTAssertNil(old.chaseTotal)
+        XCTAssertNil(old.amexDebtTotal)
+    }
+
+    // MARK: peak
+
+    func testPeakUsesTheServersPeakWhenTheThinnedSnapshotsMissIt() {
+        var h = history(48_000, 49_000)
+        h.peakNetWorth = 52_000
+        XCTAssertEqual(ready(h).peak, "最高値 52,000ポンド")
+    }
+
+    func testPeakFallsBackToTheSnapshotsWhenTheServerSendsNone() {
+        XCTAssertEqual(ready(history(48_000, 49_000)).peak, "最高値 49,000ポンド")
+    }
+
+    // MARK: breakeven
+
+    func testBreakevenIsTheNetWorthWhereAMonthOfReturnEqualsTheContribution() {
+        // 1,000 / (1.07^(1/12) - 1) = 176,865; from 49,000 that is 127,865 to go.
+        let b = ready(history(49_000)).breakeven
+        XCTAssertEqual(b?.label, "17.7万ポンド")
+        XCTAssertEqual(b?.remaining, "あと12.8万ポンド")
+        XCTAssertNotNil(b?.growth)
+        XCTAssertNotNil(b?.time)
+    }
+
+    func testBreakevenIsReachedOnceNetWorthPassesIt() {
+        let b = ready(history(200_000)).breakeven
+        XCTAssertEqual(b?.remaining, "達成済み")
+        XCTAssertEqual(b?.growth.fraction, 1)
+    }
+
+    func testNoBreakevenWithoutContributions() {
+        XCTAssertNil(ready(history(49_000), config: WidgetConfig(withContributions: false)).breakeven)
+        XCTAssertNil(ready(history(49_000, monthly: 0)).breakeven)
+    }
+
     // MARK: timestamps
 
     func testParsesTimestampsWithAndWithoutFractionalSeconds() {

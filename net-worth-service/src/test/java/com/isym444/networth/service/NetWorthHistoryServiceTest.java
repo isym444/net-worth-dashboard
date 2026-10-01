@@ -147,6 +147,26 @@ class NetWorthHistoryServiceTest {
     }
 
     @Test
+    void getHistory_reportsThePeakOverAllSnapshots_evenWhenTheTableRowsAreThinnedAway() {
+        NetWorthSnapshotRepository repository = mock(NetWorthSnapshotRepository.class);
+        // September's peak sits mid-month; once October starts, past months keep one row (the first), so the peak is thinned out.
+        NetWorthSnapshot sepFirst = snapshotAt(LocalDate.of(2026, 9, 1), 48000.0);
+        NetWorthSnapshot sepPeak = snapshotAt(LocalDate.of(2026, 9, 15), 52000.0);
+        NetWorthSnapshot octFirst = snapshotAt(LocalDate.of(2026, 10, 1), 49000.0);
+        when(repository.findByCurrencyOrderByTimestampAsc("GBP")).thenReturn(List.of(sepFirst, sepPeak, octFirst));
+
+        PortfolioProjectionService portfolioProjectionService = mock(PortfolioProjectionService.class);
+        LocalDate fixedToday = LocalDate.of(2026, 10, 1);
+        Clock fixedClock = Clock.fixed(fixedToday.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
+        NetWorthHistoryService service = new NetWorthHistoryService(repository, portfolioProjectionService, fixedClock);
+
+        NetWorthHistoryResponse response = service.getHistory("GBP");
+
+        assertEquals(52000.0, response.peakNetWorth());
+        assertEquals(false, response.snapshots().contains(sepPeak));
+    }
+
+    @Test
     void getHistory_fallsBackToFirstAlphabeticalCurrency_whenNoneRequested() {
         NetWorthSnapshotRepository repository = mock(NetWorthSnapshotRepository.class);
         when(repository.findDistinctCurrencies()).thenReturn(List.of("EUR", "GBP"));

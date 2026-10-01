@@ -150,6 +150,22 @@
           —
         }
       </strong>
+      <div class="projection-card__breakeven">
+        <span>Net worth where {{ assumedAnnualReturnPercentLabel }} returns ≥ monthly contribution</span>
+        @if (contributionBreakevenNetWorth(); as breakeven) {
+          <strong>{{ breakeven | number: '1.2-2' }} {{ latestSnapshot.currency }}</strong>
+          <small>
+            @if (latestSnapshot.grandTotal >= breakeven) {
+              Already reached
+            } @else {
+              {{ breakeven - latestSnapshot.grandTotal | number: '1.2-2' }} {{ latestSnapshot.currency }} to go
+            }
+          </small>
+          <app-goal-bars [progress]="progressToward(latestSnapshot, breakeven)" />
+        } @else {
+          <strong>—</strong>
+        }
+      </div>
       <div class="projection-card__controls">
         <label for="monthly-contribution">Monthly contribution ({{ latestSnapshot.currency }})</label>
         <input
@@ -269,6 +285,17 @@
             </strong>
           </div>
         </div>
+      </section>
+      </div>
+    }
+
+    @if (nextMilestone(latestSnapshot); as target) {
+      <div class="dashboard-row">
+      <section class="insights-card">
+        <div class="insights-card__header">
+          <h2>Progress to Next Milestone ({{ target | number: '1.0-0' }} {{ latestSnapshot.currency }})</h2>
+        </div>
+        <app-goal-bars [progress]="progressToward(latestSnapshot, target)" />
       </section>
       </div>
     }

@@ -236,6 +236,28 @@ header button:disabled {
   margin-bottom: 1rem;
 }
 
+.projection-card__breakeven {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.projection-card__breakeven span,
+.projection-card__breakeven small {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.projection-card__breakeven strong {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
 .projection-card__controls {
   display: flex;
   flex-wrap: wrap;
