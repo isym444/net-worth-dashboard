@@ -62,6 +62,7 @@ private struct SmallLayout: View {
             Label11("純資産")
             Headline(state: s, size: 24)
             ChangeLine(state: s)
+            PaydayAndSpendLines(state: s)
             Spacer(minLength: 4)
             Footer(state: s)
         }

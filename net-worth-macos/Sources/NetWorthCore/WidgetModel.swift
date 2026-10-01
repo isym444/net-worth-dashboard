@@ -7,6 +7,14 @@ public struct ProjectionCompareRow: Equatable {
 }
 public struct PeriodChange: Equatable { public let label: String; public let text: String; public let up: Bool? }
 public struct TrendPoint: Equatable { public let date: Date; public let total: Double }
+/// A line of text with one number the view highlights: "給料日まで" + "23" + "日".
+public struct StatLine: Equatable {
+    public let lead: String
+    public let value: String
+    public let tail: String
+    public let negative: Bool
+    public var text: String { lead + value + tail }
+}
 public struct GoalBar: Equatable { public let fraction: Double; public let percent: String }
 public struct NextGoal: Equatable {
     public let label: String       // "10万ポンド"
@@ -26,6 +34,10 @@ public enum WidgetState: Equatable {
         public let change: String?                   // "+1,234ポンド (+0.7%)" / "変化なし" / nil when there is no previous snapshot
         public let changeUp: Bool?                   // true = up, false = down, nil = neutral
         public let updated: String                   // "3時間前に更新"
+        public let daysToPayday: Int                 // calendar days until the next payday (>= 1)
+        public let payday: StatLine                  // "給料日まで12日"
+        public let maxDailySpend: StatLine?            // "1日の上限 38ポンド"; nil when the latest snapshot has no Chase/Amex figures
+        public let maxDailySpendBuffer: StatLine?      // "400ポンド確保で 12ポンド"
         public let hint: String?                     // "キーが拒否されました — …" / "古いデータ — …" / nil
         public let oneYear: String?                  // "21万ポンド"
         public let assumption: String                // "年7%運用・毎月1,000ポンド積立"
@@ -92,6 +104,7 @@ public enum WidgetModel {
             hint = nil
         }
 
+        let daysToPayday = Payday.daysUntilNext(from: now, calendar: calendar)
         let peak = points.max(by: { $0.total < $1.total }).map { "最高値 " + Money.full($0.total, unit: unit) }
 
         return .ready(.init(
@@ -100,6 +113,12 @@ public enum WidgetModel {
             change: change,
             changeUp: up,
             updated: updatedText(ageMs),
+            daysToPayday: daysToPayday,
+            payday: StatLine(lead: "給料日まで", value: "\(daysToPayday)", tail: "日", negative: false),
+            maxDailySpend: DailySpend.perDay(snapshot: latest, days: daysToPayday)
+                .map { spendLine(lead: "1日の上限 ", amount: $0, unit: unit) },
+            maxDailySpendBuffer: DailySpend.perDay(snapshot: latest, days: daysToPayday, buffer: DailySpend.investBuffer)
+                .map { spendLine(lead: "\(Money.full(DailySpend.investBuffer, unit: unit))確保で ", amount: $0, unit: unit) },
             hint: hint,
             oneYear: history.estimatedNetWorth1y.map { Money.compact($0, unit: unit) },
             assumption: assumption(contribution: contribution, unit: unit),
@@ -115,6 +134,10 @@ public enum WidgetModel {
     }
 
     // MARK: - pieces
+
+    private static func spendLine(lead: String, amount: Double, unit: String) -> StatLine {
+        StatLine(lead: lead, value: Money.number(amount), tail: unit, negative: Money.roundHalfUp(amount) < 0)
+    }
 
     static func changeLine(delta: Double?, previousTotal: Double?, unit: String) -> (String?, Bool?) {
         guard let delta, let previousTotal else { return (nil, nil) }

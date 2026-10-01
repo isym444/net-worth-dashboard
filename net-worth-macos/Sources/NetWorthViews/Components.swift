@@ -31,6 +31,28 @@ struct ChangeLine: View {
     }
 }
 
+/// A line of secondary text whose number is drawn in a bold accent colour so it stands out (red when negative).
+struct StatLineView: View {
+    @Environment(\.colorScheme) private var scheme
+    let line: StatLine
+    var body: some View {
+        let palette = Palette(scheme)
+        (Text(line.lead).foregroundColor(palette.secondary)
+            + Text(line.value).fontWeight(.bold).foregroundColor(line.negative ? palette.down : palette.accent)
+            + Text(line.tail).foregroundColor(palette.secondary))
+            .font(.system(size: 12)).lineLimit(1).minimumScaleFactor(0.8)
+    }
+}
+
+/// Small widget only: days to payday and the daily spending allowance, with and without the money set aside to invest.
+struct PaydayAndSpendLines: View {
+    let state: WidgetState.Ready
+    var body: some View {
+        StatLineView(line: state.payday)
+        ForEach([state.maxDailySpend, state.maxDailySpendBuffer].compactMap { $0 }, id: \.text) { StatLineView(line: $0) }
+    }
+}
+
 struct Footer: View {
     @Environment(\.colorScheme) private var scheme
     let state: WidgetState.Ready

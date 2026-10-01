@@ -16,7 +16,9 @@ public enum SampleData {
             let i = Double(60 - day)
             let total = 41_000 + i * 140 + 900 * sin(i * 0.9)
             let at = now.addingTimeInterval(-Double(day) * 86_400)
-            snapshots.append(Snapshot(id: Int64(100 + 60 - day), timestamp: f.string(from: at), currency: "GBP", grandTotal: total))
+            snapshots.append(Snapshot(
+                id: Int64(100 + 60 - day), timestamp: f.string(from: at), currency: "GBP", grandTotal: total,
+                chaseTotal: 2_100, amexDebtTotal: 450))
         }
         return HistoryResponse(
             snapshots: snapshots.filter { (f.date(from: $0.timestamp) ?? now) <= now },

@@ -5,13 +5,13 @@ next-goal progress, milestones, projections and a 2-year trend, from `net-worth-
 Spec and plan: `docs/superpowers/`.
 
 ## Layout
-- `Sources/NetWorthCore`: all logic (money formatting, projections, goal progress, the widget model, API client, cache, sync).
+- `Sources/NetWorthCore`: all logic (money formatting, projections, goal progress, payday countdown, the widget model, API client, cache, sync).
 - `Sources/NetWorthViews`: the SwiftUI layouts for the four widget sizes.
 - `Sources/LayoutRenderer`: dev-only; `swift run LayoutRenderer renders` draws every size to PNG using synthetic data.
 - `App/`: the settings window. `Widget/`: the WidgetKit extension. `project.yml`: the XcodeGen project.
 
 ## Build, install
-    swift test                 # 116 unit tests, no Xcode project needed
+    swift test                 # 128 unit tests, no Xcode project needed
     ./install.sh               # xcodegen + xcodebuild (signed with your Apple Development identity) + install + open
 
 Needs Xcode, XcodeGen (`brew install xcodegen`) and an Apple ID added under Xcode → Settings → Accounts
