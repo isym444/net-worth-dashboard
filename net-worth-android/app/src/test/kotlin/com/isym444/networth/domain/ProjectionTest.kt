@@ -72,4 +72,9 @@ class ProjectionTest {
     @Test fun milestoneListMatchesTheDashboard() {
         assertEquals(listOf(100_000.0, 250_000.0, 500_000.0, 750_000.0, 1_000_000.0), ProjectionConfig.MILESTONES)
     }
+
+    @Test fun breakevenIsWhereAMonthOfReturnEqualsTheContribution() {
+        // 1,000 / (1.07^(1/12) - 1) = 176,861.39
+        assertEquals(176_861.39, Projection.breakevenNetWorth(1_000.0), 0.01)
+    }
 }

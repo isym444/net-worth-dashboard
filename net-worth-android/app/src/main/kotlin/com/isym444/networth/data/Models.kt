@@ -18,6 +18,8 @@ data class Snapshot(
     val timestamp: String = "",
     val currency: String = "GBP",
     val grandTotal: Double = 0.0,
+    val chaseTotal: Double? = null,                       // null on old snapshots, which predate the column
+    val amexDebtTotal: Double? = null,
 )
 
 /** Mirrors `NetWorthHistoryResponse` (net-worth-service). Every projection is nullable. */
@@ -34,6 +36,7 @@ data class HistoryResponse(
     val expectedNetWorthWithContributionsAt65: Double? = null,
     val estimatedNetWorth1y: Double? = null,
     val monthlyContribution: Double? = null,
+    val peakNetWorth: Double? = null,                     // highest total over ALL snapshots; `snapshots` is thinned by the server
 )
 
 /** What the widget renders from; persisted by HistoryCache. `fetchedAt` is epoch milliseconds (0 = never). */

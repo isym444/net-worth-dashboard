@@ -2,16 +2,12 @@ package com.isym444.networth.widget
 
 import android.content.Intent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
-import androidx.glance.Image
-import androidx.glance.ImageProvider
-import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.actionStartActivity
@@ -21,7 +17,6 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
-import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
@@ -37,10 +32,11 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.isym444.networth.domain.GoalBar
 import com.isym444.networth.domain.MilestoneRow
+import com.isym444.networth.domain.NextGoal
 import com.isym444.networth.domain.PeriodChange
 import com.isym444.networth.domain.ProjectionCompareRow
-import com.isym444.networth.domain.WIDE_CHART_MIN_HEIGHT_DP
 import com.isym444.networth.domain.ProjectionRow
+import com.isym444.networth.domain.StatLine
 import com.isym444.networth.domain.WidgetSize
 import com.isym444.networth.domain.WidgetState
 
@@ -73,7 +69,8 @@ internal fun WidgetContent(state: WidgetState, tap: Intent) {
                 WidgetSize.MEDIUM -> MediumLayout(state)
                 WidgetSize.LARGE -> LargeLayout(state, showProjections = false)
                 WidgetSize.XLARGE -> LargeLayout(state, showProjections = true)
-                WidgetSize.WIDE -> WideLayout(state, showChart = size.height.value >= WIDE_CHART_MIN_HEIGHT_DP, widthDp = size.width.value)
+                WidgetSize.FULL -> FullLayout(state)
+                WidgetSize.WIDE -> WideLayout(state)
             }
             is WidgetState.Empty -> Message(state.message)
             WidgetState.NotConfigured -> Message("アプリを開いて設定してください")
@@ -94,6 +91,7 @@ private fun SmallLayout(s: WidgetState.Ready) {
         Label("純資産")
         Headline(s, amountSize = 24.sp)
         ChangeLine(s)
+        PaydayAndSpendLines(s)
         Spacer(GlanceModifier.height(4.dp))
         Footer(s)
     }
@@ -151,10 +149,59 @@ private fun LargeLayout(s: WidgetState.Ready, showProjections: Boolean) {
     }
 }
 
-// Two columns: the summary, goal progress and recent changes on the left; milestones and both projection scenarios on
-// the right; and, when tall enough, the trend chart under both. Each block is its own Column (Glance's 10-child limit).
+// Everything the wide layout shows, in one column for a tall phone-width widget. Spacing is tight so it fits about 500dp;
+// each block is its own Column (Glance's 10-child limit).
 @Composable
-private fun WideLayout(s: WidgetState.Ready, showChart: Boolean, widthDp: Float) {
+private fun FullLayout(s: WidgetState.Ready) {
+    Column(modifier = GlanceModifier.fillMaxSize()) {
+        Column {
+            Label("純資産")
+            Headline(s, amountSize = 30.sp)
+            ChangeLine(s)
+            s.oneYear?.let { Text("1年後の予想 ≈ $it", style = TextStyle(color = Palette.secondary, fontSize = 12.sp), maxLines = 1) }
+        }
+        if (s.periodChanges.isNotEmpty() || s.peak != null) {
+            Spacer(GlanceModifier.height(5.dp))
+            Column {
+                Label("増減の推移")
+                s.periodChanges.forEach { PeriodLine(it, vertical = 1.dp) }
+                s.peak?.let { Text(it, modifier = GlanceModifier.padding(vertical = 1.dp), style = TextStyle(color = Palette.secondary, fontSize = 12.sp), maxLines = 1) }
+            }
+        }
+        Spacer(GlanceModifier.height(5.dp))
+        Column {
+            Label("目標までの期間")
+            Text(s.assumption, style = TextStyle(color = Palette.secondary, fontSize = 10.sp), maxLines = 1)
+            s.milestones.forEach { MilestoneLine(it, labelWidth = 80.dp, vertical = 1.dp) }
+        }
+        if (s.projectionTable.isNotEmpty()) {
+            Spacer(GlanceModifier.height(5.dp))
+            Column {
+                Label("将来の予想純資産")
+                CompareHeader()
+                s.projectionTable.forEach { CompareLine(it, vertical = 1.dp) }
+            }
+        }
+        if (s.nextGoal != null || s.breakeven != null) {
+            Spacer(GlanceModifier.height(5.dp))
+            Column {
+                s.nextGoal?.let { NextGoalBlock(it) }
+                s.breakeven?.let {
+                    Spacer(GlanceModifier.height(5.dp))
+                    BreakevenBlock(it)
+                }
+            }
+        }
+        Spacer(GlanceModifier.height(4.dp))
+        Footer(s)
+    }
+}
+
+// Two columns: the summary and recent changes on the left; milestones and both projection scenarios on the right; then
+// progress to the next goal and to the contribution breakeven side by side under both. Each block is its own Column
+// (Glance's 10-child limit).
+@Composable
+private fun WideLayout(s: WidgetState.Ready) {
     Column(modifier = GlanceModifier.fillMaxSize()) {
         Row(modifier = GlanceModifier.fillMaxWidth()) {
             Column(modifier = GlanceModifier.defaultWeight()) {
@@ -164,16 +211,6 @@ private fun WideLayout(s: WidgetState.Ready, showChart: Boolean, widthDp: Float)
                     ChangeLine(s)
                     s.oneYear?.let { Text("1年後の予想 ≈ $it", style = TextStyle(color = Palette.secondary, fontSize = 12.sp), maxLines = 1) }
                 }
-                s.nextGoal?.let { goal ->
-                    Spacer(GlanceModifier.height(8.dp))
-                    Column {
-                        Label("${goal.label}まで・${goal.remaining}")
-                        Spacer(GlanceModifier.height(3.dp))
-                        GoalBarRow("資産の寄与", goal.growth, Palette.up)
-                        Spacer(GlanceModifier.height(3.dp))
-                        GoalBarRow("時間の進捗", goal.time, Palette.accent)
-                    }
-                }
                 if (s.periodChanges.isNotEmpty() || s.peak != null) {
                     Spacer(GlanceModifier.height(8.dp))
                     Column {
@@ -182,8 +219,6 @@ private fun WideLayout(s: WidgetState.Ready, showChart: Boolean, widthDp: Float)
                         s.peak?.let { Text(it, modifier = GlanceModifier.padding(vertical = 2.dp), style = TextStyle(color = Palette.secondary, fontSize = 12.sp), maxLines = 1) }
                     }
                 }
-                Spacer(GlanceModifier.height(6.dp))
-                Footer(s)
             }
             Spacer(GlanceModifier.width(12.dp))
             Column(modifier = GlanceModifier.defaultWeight()) {
@@ -202,11 +237,63 @@ private fun WideLayout(s: WidgetState.Ready, showChart: Boolean, widthDp: Float)
                 }
             }
         }
-        if (showChart && s.trend.size >= 2) {
+        if (s.nextGoal != null || s.breakeven != null) {
             Spacer(GlanceModifier.height(8.dp))
-            Label("推移 (過去${s.trendSpan})")
-            TrendImage(s, widthDp - 24f)
+            Row(modifier = GlanceModifier.fillMaxWidth()) {
+                Column(modifier = GlanceModifier.defaultWeight()) { s.nextGoal?.let { NextGoalBlock(it) } }
+                Spacer(GlanceModifier.width(12.dp))
+                Column(modifier = GlanceModifier.defaultWeight()) { s.breakeven?.let { BreakevenBlock(it) } }
+            }
         }
+        Spacer(GlanceModifier.height(6.dp))
+        Footer(s)
+    }
+}
+
+@Composable
+private fun NextGoalBlock(goal: NextGoal) {
+    Column {
+        Label("${goal.label}まで・${goal.remaining}")
+        Spacer(GlanceModifier.height(3.dp))
+        GoalBarRow("資産の寄与", goal.growth, Palette.up)
+        Spacer(GlanceModifier.height(3.dp))
+        GoalBarRow("時間の進捗", goal.time, Palette.accent)
+    }
+}
+
+/** "Where the portfolio's monthly return overtakes your monthly contribution", with the same two bars as a milestone. */
+@Composable
+private fun BreakevenBlock(goal: NextGoal) {
+    Column {
+        Label("運用益が積立額を超える純資産")
+        Label("${goal.label}・${goal.remaining}")
+        Spacer(GlanceModifier.height(3.dp))
+        GoalBarRow("資産の寄与", goal.growth, Palette.up)
+        Spacer(GlanceModifier.height(3.dp))
+        GoalBarRow("時間の進捗", goal.time, Palette.accent)
+    }
+}
+
+/** Small widget only: days to payday and the daily spending allowance, with and without the money set aside to invest. */
+@Composable
+private fun PaydayAndSpendLines(s: WidgetState.Ready) {
+    Column {
+        StatLineText(s.payday)
+        listOfNotNull(s.maxDailySpend, s.maxDailySpendBuffer).forEach { StatLineText(it) }
+    }
+}
+
+/** A line of secondary text whose number is drawn bold in the accent colour so it stands out (red when negative). */
+@Composable
+private fun StatLineText(line: StatLine) {
+    Row {
+        Text(line.lead, style = TextStyle(color = Palette.secondary, fontSize = 12.sp), maxLines = 1)
+        Text(
+            line.value,
+            style = TextStyle(color = if (line.negative) Palette.down else Palette.accent, fontSize = 12.sp, fontWeight = FontWeight.Bold),
+            maxLines = 1,
+        )
+        Text(line.tail, style = TextStyle(color = Palette.secondary, fontSize = 12.sp), maxLines = 1)
     }
 }
 
@@ -234,21 +321,8 @@ private fun GoalBarRow(label: String, bar: GoalBar?, color: ColorProvider) {
 }
 
 @Composable
-private fun TrendImage(s: WidgetState.Ready, widthDp: Float) {
-    val density = LocalContext.current.resources.displayMetrics.density
-    val up = s.trend.last().total >= s.trend.first().total
-    val bitmap = remember(s.trend, widthDp) { TrendChart.render(s.trend, (widthDp * density).toInt(), (72 * density).toInt(), density, up) }
-    Image(
-        provider = ImageProvider(bitmap),
-        contentDescription = null,
-        contentScale = ContentScale.FillBounds,
-        modifier = GlanceModifier.fillMaxWidth().height(72.dp),
-    )
-}
-
-@Composable
-private fun PeriodLine(c: PeriodChange) {
-    Row(modifier = GlanceModifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun PeriodLine(c: PeriodChange, vertical: Dp = 2.dp) {
+    Row(modifier = GlanceModifier.fillMaxWidth().padding(vertical = vertical), verticalAlignment = Alignment.CenterVertically) {
         Text(
             c.label,
             modifier = GlanceModifier.width(48.dp),
@@ -273,8 +347,8 @@ private fun CompareHeader() {
 }
 
 @Composable
-private fun CompareLine(p: ProjectionCompareRow) {
-    Row(modifier = GlanceModifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun CompareLine(p: ProjectionCompareRow, vertical: Dp = 2.dp) {
+    Row(modifier = GlanceModifier.fillMaxWidth().padding(vertical = vertical), verticalAlignment = Alignment.CenterVertically) {
         Text(
             p.label,
             modifier = GlanceModifier.width(44.dp),
@@ -322,8 +396,8 @@ private fun Footer(s: WidgetState.Ready) {
 }
 
 @Composable
-private fun MilestoneLine(m: MilestoneRow, labelWidth: Dp = 84.dp) {
-    Row(modifier = GlanceModifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun MilestoneLine(m: MilestoneRow, labelWidth: Dp = 84.dp, vertical: Dp = 2.dp) {
+    Row(modifier = GlanceModifier.fillMaxWidth().padding(vertical = vertical), verticalAlignment = Alignment.CenterVertically) {
         Text(
             m.label,
             modifier = GlanceModifier.width(labelWidth),

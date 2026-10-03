@@ -80,10 +80,11 @@ public class AmexInsightService {
 
                 Respond in plain text only — no markdown headers, no asterisks, no numbered lists. Use
                 short paragraphs and "- " for bullet points where useful. Keep the entire response under
-                150 words.
+                250 words.
 
                 Cover:
-                - A brief summary of overall spending and the top 2-3 categories by total spend.
+                - A comprehensive breakdown of the last 30 days' spending where the breakdown MUST add up to total spending
+                - A brief summary of the top 2-3 categories by total spend.
                 - Any notable, unusual, or one-off transactions worth flagging.
                 - Any visible trend (e.g. increasing spend in a category, recurring charges).
                 - 2-4 concrete, specific financial tips grounded in this actual data (not generic advice).

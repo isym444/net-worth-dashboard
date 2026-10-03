@@ -24,7 +24,14 @@ class WidgetSizeTest {
 
     @Test fun extraLargeAddsProjections() {
         assertEquals(WidgetSize.XLARGE, WidgetSize.forDp(280f, 390f))
-        assertEquals(WidgetSize.XLARGE, WidgetSize.forDp(379f, 700f))
+        assertEquals(WidgetSize.XLARGE, WidgetSize.forDp(379f, 499f))
+    }
+
+    @Test fun aTallPhoneWidthWidgetGetsTheSingleColumnFullLayout() {
+        assertEquals(WidgetSize.FULL, WidgetSize.forDp(340f, 520f))     // the "full screen" widget on a phone
+        assertEquals(WidgetSize.FULL, WidgetSize.forDp(280f, 500f))
+        assertEquals(WidgetSize.FULL, WidgetSize.forDp(379f, 900f))
+        assertEquals(WidgetSize.SMALL, WidgetSize.forDp(250f, 600f))    // still too narrow for Japanese text
     }
 
     @Test fun theWidestPortraitHomeScreenWidgetOnTheOppoPadGetsTwoColumns() {

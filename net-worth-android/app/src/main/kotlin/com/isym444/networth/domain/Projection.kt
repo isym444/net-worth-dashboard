@@ -19,6 +19,10 @@ sealed interface Reach {
 
 /** Pure port of `timeToReachPortfolio` (dashboard.component.ts). */
 object Projection {
+    /** The net worth at which one month of growth equals the monthly contribution (`c / r`; port of `contributionBreakevenNetWorth`). */
+    fun breakevenNetWorth(monthlyContribution: Double): Double =
+        monthlyContribution / ((1 + ProjectionConfig.ANNUAL_RETURN).pow(1.0 / 12) - 1)
+
     /** 0 if `current >= target`; null if not reached within [maxMonths] (default [ProjectionConfig.MAX_MONTHS]). */
     fun monthsToReach(current: Double, target: Double, monthlyContribution: Double, maxMonths: Int = ProjectionConfig.MAX_MONTHS): Int? {
         if (current >= target) return 0

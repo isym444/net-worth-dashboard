@@ -27,8 +27,8 @@ class Sync(
         val api = source() ?: return SyncResult.Failed(ApiError.NotConfigured())
         return try {
             val fresh = api.history()
-            // Keep every snapshot /history returns: the change lines, all-time high and trend chart need the whole history.
-            // It is small (the API thins old data, and `Snapshot` decodes only four fields).
+            // Keep every snapshot /history returns: the change lines and all-time high need the whole history.
+            // It is small (the API thins old data, and `Snapshot` decodes only six fields).
             cache.save(CacheSnapshot(fetchedAt = clock(), history = fresh))
             SyncResult.Updated
         } catch (e: ApiError) {

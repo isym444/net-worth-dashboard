@@ -1,11 +1,13 @@
 package com.isym444.networth.domain
 
+import com.isym444.networth.data.ApiJson
 import com.isym444.networth.data.AppSettings
 import com.isym444.networth.data.CacheSnapshot
 import com.isym444.networth.data.HistoryResponse
 import com.isym444.networth.data.Snapshot
 import com.isym444.networth.data.SyncStatus
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -274,32 +276,78 @@ class WidgetModelTest {
         val bad = HistoryResponse(snapshots = listOf(Snapshot(1, "nope", "GBP", 1.0), Snapshot(2, "nah", "GBP", 2.0)))
         val s = ready(bad)
         assertTrue(s.periodChanges.isEmpty())
-        assertTrue(s.trend.isEmpty())
-        assertEquals("", s.trendSpan)
     }
 
     @Test fun peakIsTheHighestSnapshotEver() =
         assertEquals("最高値 50,000ポンド", ready(dated(9 to 40_000.0, 5 to 50_000.0, 0 to 48_000.0)).peak)
 
-    @Test fun trendKeepsTheLastTwoYearsOldestFirstWithItsSpan() {
-        val s = ready(dated(900 to 1.0, 400 to 2.0, 5 to 3.0, 0 to 4.0))
-        assertEquals(listOf(2.0, 3.0, 4.0), s.trend.map { it.total })       // the 900-day-old snapshot is outside the window
-        assertEquals(listOf(true), listOf(s.trend.zipWithNext().all { (a, b) -> a.epochMs < b.epochMs }))
-        assertEquals("13か月間", s.trendSpan)   // 400 days ago to today is 400 days, 13 months
+    // ---- daily spend and payday ------------------------------------------------------------------------
+
+    private fun withBank(chase: Double?, amex: Double?) = HistoryResponse(
+        snapshots = listOf(Snapshot(1, "2026-09-29T07:00:00Z", "GBP", 50_000.0, chase, amex)),
+    )
+
+    @Test fun theWidgetShowsDaysToPayday() {
+        val s = ready(history(1.0))
+        assertEquals(23, s.daysToPayday)
+        assertEquals("給料日まで23日", s.payday.text)
+        assertEquals(StatLine("給料日まで", "23", "日", false), s.payday)
     }
 
-    @Test fun trendIsThinnedEvenlyKeepingTheFirstAndLastPoint() {
-        val days = (0..599).map { (599 - it) to it.toDouble() }.toTypedArray()
-        val s = ready(dated(*days))
-        assertEquals(WidgetModel.TREND_MAX_POINTS, s.trend.size)
-        assertEquals(0.0, s.trend.first().total, 0.0)
-        assertEquals(599.0, s.trend.last().total, 0.0)
+    @Test fun maxDailySpendWithAndWithoutTheInvestBuffer() {
+        // 2026-09-30 -> payday Fri 2026-10-23 = 23 days. (2,100 - 450) / 23 = 71.74; minus 400 buffer: 1,250 / 23 = 54.35.
+        val s = ready(withBank(2_100.0, 450.0))
+        assertEquals("1日の上限 72ポンド", s.maxDailySpend?.text)
+        assertEquals("400ポンド確保で 54ポンド", s.maxDailySpendBuffer?.text)
     }
 
-    @Test fun trendSpanIsWrittenInDaysMonthsOrYears() {
-        assertEquals("12日間", ready(dated(12 to 1.0, 0 to 2.0)).trendSpan)
-        assertEquals("5か月間", ready(dated(152 to 1.0, 0 to 2.0)).trendSpan)
-        assertEquals("2年間", ready(dated(730 to 1.0, 0 to 2.0)).trendSpan)
+    @Test fun maxDailySpendCanGoNegative() {
+        val line = ready(withBank(500.0, 450.0)).maxDailySpendBuffer!!
+        assertEquals("400ポンド確保で -15ポンド", line.text)
+        assertTrue(line.negative)
+    }
+
+    @Test fun noDailySpendWhenTheSnapshotLacksChaseOrAmex() {
+        assertNull(ready(withBank(null, null)).maxDailySpend)
+        assertNull(ready(withBank(2_100.0, null)).maxDailySpendBuffer)
+    }
+
+    @Test fun snapshotDecodesChaseAndAmexAndToleratesTheirAbsence() {
+        val full = ApiJson.decodeFromString(Snapshot.serializer(), """{"grandTotal":1,"chaseTotal":2.5,"amexDebtTotal":3}""")
+        assertEquals(2.5, full.chaseTotal!!, 0.0)
+        assertEquals(3.0, full.amexDebtTotal!!, 0.0)
+        val old = ApiJson.decodeFromString(Snapshot.serializer(), """{"grandTotal":1,"chaseTotal":null}""")
+        assertNull(old.chaseTotal)
+        assertNull(old.amexDebtTotal)
+    }
+
+    // ---- peak ------------------------------------------------------------------------------------------
+
+    @Test fun peakUsesTheServersPeakWhenTheThinnedSnapshotsMissIt() =
+        assertEquals("最高値 52,000ポンド", ready(history(48_000.0, 49_000.0).copy(peakNetWorth = 52_000.0)).peak)
+
+    @Test fun peakFallsBackToTheSnapshotsWhenTheServerSendsNone() =
+        assertEquals("最高値 49,000ポンド", ready(history(48_000.0, 49_000.0)).peak)
+
+    // ---- breakeven -------------------------------------------------------------------------------------
+
+    @Test fun breakevenIsTheNetWorthWhereAMonthOfReturnEqualsTheContribution() {
+        // 1,000 / (1.07^(1/12) - 1) = 176,865; from 49,000 that is 127,865 to go.
+        val b = ready(history(49_000.0)).breakeven!!
+        assertEquals("17.7万ポンド", b.label)
+        assertEquals("あと12.8万ポンド", b.remaining)
+        assertNotNull(b.time)
+    }
+
+    @Test fun breakevenIsReachedOncePastIt() {
+        val b = ready(history(200_000.0)).breakeven!!
+        assertEquals("達成済み", b.remaining)
+        assertEquals(1f, b.growth.fraction, 0f)
+    }
+
+    @Test fun noBreakevenWithoutContributions() {
+        assertNull(ready(history(49_000.0), WidgetConfig(withContributions = false)).breakeven)
+        assertNull(ready(history(49_000.0, monthly = 0.0)).breakeven)
     }
 
     @Test fun projectionTableShowsBothScenarios() {

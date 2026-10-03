@@ -19,10 +19,10 @@ point Gradle at it with `net-worth-android/local.properties` (`sdk.dir=…`, git
    Or: `adb install -r app-release.apk`.
 2. Open **Net Worth**. The API URL defaults to `https://nwapi.isym.uk`; paste the dashboard access key
    (`DASHBOARD_ACCESS_KEY` on the backend), optionally the dashboard URL, then press **Save & test**.
-3. Press **Add widget to home screen** (or long-press the home screen → Widgets → Net Worth). Resize it: small shows the headline, medium adds the next three milestones,
+3. Press **Add widget to home screen** (or long-press the home screen → Widgets → Net Worth). Resize it: small shows the headline plus days to payday and the max daily spend (with and without £400 set aside to invest), medium adds the next three milestones,
    large adds every milestone and the one-year estimate, extra-large adds the assumptions and the age 40/50/60/65 projections, and wide (≥380dp wide and ≥300dp tall) switches to two columns
-   with progress to the next goal, 7/30-day and since-start changes, the all-time high, projections with and without contributions,
-   and (when tall enough) a trend chart.
+   with 7/30-day and since-start changes, the all-time high, projections with and without contributions,
+   and progress to the next goal and to the net worth where a month of return exceeds the monthly contribution.
    The widget text is Japanese and amounts are in 万/億 with ポンド instead of £ (see `domain/Money.kt`).
 4. Oppo/ColorOS: use **Battery optimisation settings** in the app to allow unrestricted background use.
 

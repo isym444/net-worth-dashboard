@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">純資産</string>
     <string name="widget_description">純資産と目標までの期間</string>
+    <string name="widget_full_label">純資産 (全画面)</string>
 </resources>

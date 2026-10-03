@@ -15,7 +15,10 @@ data class MilestoneRow(val label: String, val value: String, val reached: Boole
 data class ProjectionRow(val label: String, val value: String)
 data class ProjectionCompareRow(val label: String, val withContributions: String, val withoutContributions: String)
 data class PeriodChange(val label: String, val text: String, val up: Boolean?)
-data class TrendPoint(val epochMs: Long, val total: Double)
+/** A line of text with one number the view highlights: "給料日まで" + "23" + "日". */
+data class StatLine(val lead: String, val value: String, val tail: String, val negative: Boolean) {
+    val text: String get() = lead + value + tail
+}
 data class GoalBar(val fraction: Float, val percent: String)
 data class NextGoal(
     val label: String,
@@ -33,6 +36,10 @@ sealed interface WidgetState {
         val change: String?,                // "+1,234ポンド (+0.7%)" / "変化なし" / null when there is no previous snapshot
         val changeUp: Boolean?,             // true = up, false = down, null = neutral
         val updated: String,                // "3時間前に更新"
+        val daysToPayday: Int,              // calendar days until the next payday (>= 1)
+        val payday: StatLine,               // "給料日まで12日"
+        val maxDailySpend: StatLine?,       // "1日の上限 38ポンド"; null when the latest snapshot has no Chase/Amex figures
+        val maxDailySpendBuffer: StatLine?, // "400ポンド確保で 12ポンド"
         val hint: String?,                  // "キーが拒否されました — …" / "古いデータ — …" / null
         val oneYear: String?,               // "21万ポンド"
         val assumption: String,             // "年7%運用・毎月1,000ポンド積立"
@@ -40,10 +47,9 @@ sealed interface WidgetState {
         val projections: List<ProjectionRow>,
         val projectionTable: List<ProjectionCompareRow>, // both scenarios side by side (wide layout)
         val nextGoal: NextGoal?,                         // two progress measures to the next unreached milestone; null when all are reached
+        val breakeven: NextGoal?,                        // net worth where a month of return >= the monthly contribution; null without contributions
         val periodChanges: List<PeriodChange>,           // 7 days / 30 days / since the first snapshot ("全期間"), where history allows
         val peak: String?,                               // "最高値 49,153ポンド"
-        val trend: List<TrendPoint>,                     // totals over the last two years, oldest first (chart)
-        val trendSpan: String,                           // how much time `trend` covers: "2年間", "5か月間", "12日間"
     ) : WidgetState {
         val headline: String get() = headlineAmount + headlineUnit
 
@@ -55,8 +61,6 @@ sealed interface WidgetState {
 /** Pure: (cache, config, settings, sync status, now, zone) -> what to draw. No Android, no I/O. */
 object WidgetModel {
     const val STALE_AFTER_MS: Long = 6L * 60 * 60 * 1000
-    const val TREND_WINDOW_DAYS = 730L      // the chart covers the last two years...
-    const val TREND_MAX_POINTS = 200        // ...thinned to this many points (the chart is only a few hundred px wide)
 
     fun build(
         cache: CacheSnapshot,
@@ -91,7 +95,10 @@ object WidgetModel {
         val points = history.snapshots
             .mapNotNull { snap -> runCatching { Instant.parse(snap.timestamp) }.getOrNull()?.let { it to snap.grandTotal } }
             .sortedBy { it.first }
-        val trendPoints = trendPoints(points)
+
+        val daysToPayday = Payday.daysUntilNext(today)
+        // The server thins old snapshots (one per past month), so the real peak can be missing from `points`; it sends it separately.
+        val peakTotal = listOfNotNull(points.maxOfOrNull { it.second }, history.peakNetWorth).maxOrNull()
 
         val ageMs = now.toEpochMilli() - cache.fetchedAt
         val hint = when {
@@ -106,6 +113,11 @@ object WidgetModel {
             change = change,
             changeUp = up,
             updated = updatedText(ageMs),
+            daysToPayday = daysToPayday,
+            payday = StatLine("給料日まで", "$daysToPayday", "日", negative = false),
+            maxDailySpend = DailySpend.perDay(latest, daysToPayday)?.let { spendLine("1日の上限 ", it, unit) },
+            maxDailySpendBuffer = DailySpend.perDay(latest, daysToPayday, DailySpend.INVEST_BUFFER)
+                ?.let { spendLine("${Money.full(DailySpend.INVEST_BUFFER, unit)}確保で ", it, unit) },
             hint = hint,
             oneYear = history.estimatedNetWorth1y?.let { Money.compact(it, unit) },
             assumption = assumption(contribution, unit),
@@ -113,12 +125,14 @@ object WidgetModel {
             projections = projections(history, config.withContributions, unit),
             projectionTable = projectionTable(history, unit),
             nextGoal = nextGoal(latest.grandTotal, unit, contribution),
+            breakeven = breakeven(latest.grandTotal, unit, contribution),
             periodChanges = periodChanges(points, unit),
-            peak = points.maxByOrNull { it.second }?.let { "最高値 " + Money.full(it.second, unit) },
-            trend = trendPoints.map { TrendPoint(it.first.toEpochMilli(), it.second) },
-            trendSpan = trendPoints.firstOrNull()?.let { spanText(ChronoUnit.DAYS.between(it.first, trendPoints.last().first)) } ?: "",
+            peak = peakTotal?.let { "最高値 " + Money.full(it, unit) },
         )
     }
+
+    private fun spendLine(lead: String, amount: Double, unit: String) =
+        StatLine(lead, Money.number(amount), unit, negative = amount.roundToLong() < 0)
 
     private fun changeLine(delta: Double?, previousTotal: Double?, unit: String): Pair<String?, Boolean?> {
         if (delta == null || previousTotal == null) return null to null
@@ -145,20 +159,6 @@ object WidgetModel {
         return byAge.mapNotNull { (age, value) -> value?.let { ProjectionRow("${age}歳", Money.compact(it, unit)) } }
     }
 
-    /** Snapshots from the last [TREND_WINDOW_DAYS] days before the latest one, evenly thinned to [TREND_MAX_POINTS] (keeps first and last). */
-    private fun trendPoints(points: List<Pair<Instant, Double>>): List<Pair<Instant, Double>> {
-        val latestAt = points.lastOrNull()?.first ?: return emptyList()
-        val recent = points.filter { it.first >= latestAt.minus(TREND_WINDOW_DAYS, ChronoUnit.DAYS) }
-        if (recent.size <= TREND_MAX_POINTS) return recent
-        return List(TREND_MAX_POINTS) { i -> recent[(i.toLong() * (recent.size - 1) / (TREND_MAX_POINTS - 1)).toInt()] }
-    }
-
-    private fun spanText(days: Long): String = when {
-        days < 60 -> "${days}日間"
-        days < 700 -> "${(days / 30.4).roundToLong()}か月間"
-        else -> "${(days / 365.25).roundToLong()}年間"
-    }
-
     /** Change over the last 7 and 30 days (only when history goes back that far) and since the first snapshot ("全期間"). */
     private fun periodChanges(points: List<Pair<Instant, Double>>, unit: String): List<PeriodChange> {
         if (points.size < 2) return emptyList()
@@ -180,6 +180,18 @@ object WidgetModel {
         val progress = GoalProgress.compute(total, target, contribution, ProjectionConfig.ANNUAL_RETURN)
         val monthsLeft = Projection.monthsToReach(total, target, contribution)      // same figure as the milestone rows
         val remaining = monthsLeft?.let { "あと${it / 12}年${it % 12}か月" } ?: "あと100年以上"
+        return NextGoal(Money.compact(target, unit), remaining, goalBar(progress.growthShare), progress.timeShare?.let(::goalBar))
+    }
+
+    /**
+     * The net worth at which one month of growth equals the monthly contribution (`c / r`, same monthly rate as the projections),
+     * with the same two progress bars as a milestone. `remaining` is the money still to go, or "達成済み".
+     */
+    private fun breakeven(total: Double, unit: String, contribution: Double): NextGoal? {
+        if (contribution <= 0) return null
+        val target = Projection.breakevenNetWorth(contribution)
+        val progress = GoalProgress.compute(total, target, contribution, ProjectionConfig.ANNUAL_RETURN)
+        val remaining = if (total >= target) "達成済み" else "あと" + Money.compact(target - total, unit)
         return NextGoal(Money.compact(target, unit), remaining, goalBar(progress.growthShare), progress.timeShare?.let(::goalBar))
     }
 
