@@ -1,0 +1,80 @@
+name: NetWorth
+options:
+  bundleIdPrefix: com.isym444
+  deploymentTarget:
+    macOS: "14.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: JKU8L3H56D
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    ENABLE_HARDENED_RUNTIME: YES
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+packages:
+  NetWorthMac:
+    path: .
+targets:
+  NetWorth:
+    type: application
+    platform: macOS
+    sources: [App]
+    dependencies:
+      - package: NetWorthMac
+        product: NetWorthCore
+      - target: NetWorthWidget
+    entitlements:
+      path: App/NetWorth.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.application-groups:
+          - $(TeamIdentifierPrefix)com.isym444.networth
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)com.isym444.networth
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: 純資産
+        LSApplicationCategoryType: public.app-category.finance
+        NWAppGroup: $(TeamIdentifierPrefix)com.isym444.networth
+        NWKeychainGroup: $(AppIdentifierPrefix)com.isym444.networth
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.isym444.networth
+        PRODUCT_NAME: NetWorth
+  NetWorthWidget:
+    type: app-extension
+    platform: macOS
+    sources: [Widget]
+    dependencies:
+      - package: NetWorthMac
+        product: NetWorthCore
+      - package: NetWorthMac
+        product: NetWorthViews
+    entitlements:
+      path: Widget/NetWorthWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.application-groups:
+          - $(TeamIdentifierPrefix)com.isym444.networth
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)com.isym444.networth
+    info:
+      path: Widget/Info.plist
+      properties:
+        CFBundleDisplayName: 純資産
+        NWAppGroup: $(TeamIdentifierPrefix)com.isym444.networth
+        NWKeychainGroup: $(AppIdentifierPrefix)com.isym444.networth
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.isym444.networth.widget
+        PRODUCT_NAME: NetWorthWidget
+schemes:
+  NetWorth:
+    build:
+      targets:
+        NetWorth: all

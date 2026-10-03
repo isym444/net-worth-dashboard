@@ -1,12 +1,14 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { daysUntilPaycheck, nextPaycheckDate } from './bank-holidays';
+import { GoalBarsComponent } from './goal-bars.component';
+import { GoalProgress, goalProgress } from './goal-progress';
 import { environment } from '../environments/environment';
 import { HealthInsightResponse, MonthlyContributionResponse, NetWorthService, NetWorthSnapshot } from './net-worth.service';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [DatePipe, DecimalPipe],
+  imports: [DatePipe, DecimalPipe, GoalBarsComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -197,6 +199,28 @@ export class DashboardComponent implements OnInit {
   protected dailySpendToInvestBuffer(snapshot: NetWorthSnapshot): number {
     const amountLeft = snapshot.chaseTotal - snapshot.amexDebtTotal;
     return (amountLeft - this.monthlySubscriptions - this.investBuffer) / this.daysUntilNextPaycheck();
+  }
+
+  /**
+   * Net worth at which one month of portfolio growth (at the same monthly-compounded rate the projections use)
+   * equals the monthly contribution, i.e. from here the portfolio adds at least as much as you do. Null when there is no contribution.
+   */
+  protected contributionBreakevenNetWorth(): number | null {
+    const contribution = this.monthlyContributionInput();
+    if (contribution <= 0) {
+      return null;
+    }
+    return contribution / (Math.pow(1 + this.assumedAnnualReturn, 1 / 12) - 1);
+  }
+
+  /** The first net worth milestone not yet reached, or null once all are. */
+  protected nextMilestone(snapshot: NetWorthSnapshot): number | null {
+    return this.netWorthMilestones.find((m) => m > snapshot.grandTotal) ?? null;
+  }
+
+  /** Progress toward `target` with the current monthly contribution. */
+  protected progressToward(snapshot: NetWorthSnapshot, target: number): GoalProgress {
+    return goalProgress(snapshot.grandTotal, target, this.monthlyContributionInput(), this.assumedAnnualReturn);
   }
 
   protected daysUntilNextPaycheck(): number {

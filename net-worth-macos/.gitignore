@@ -1,0 +1,10 @@
+.build/
+build/
+renders/
+NetWorth.xcodeproj/
+App/Info.plist
+App/NetWorth.entitlements
+Widget/Info.plist
+Widget/NetWorthWidget.entitlements
+*.xcuserstate
+.DS_Store
