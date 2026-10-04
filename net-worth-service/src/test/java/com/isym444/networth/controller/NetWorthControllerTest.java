@@ -1,5 +1,7 @@
 package com.isym444.networth.controller;
 
+import com.isym444.networth.dto.AmexFollowUpRequest;
+import com.isym444.networth.dto.AmexFollowUpResponse;
 import com.isym444.networth.dto.HealthInsightResponse;
 import com.isym444.networth.dto.MonthlyContributionRequest;
 import com.isym444.networth.dto.MonthlyContributionResponse;
@@ -23,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class NetWorthControllerTest {
@@ -48,6 +51,42 @@ class NetWorthControllerTest {
         assertEquals(200, response.getStatusCode().value());
         assertSame(expected, response.getBody());
         assertEquals("GBP", historyService.receivedCurrency);
+    }
+
+    @Test
+    void askAmexFollowUp_passesTheTrimmedQuestionToTheServiceAndReturnsItsAnswer() {
+        AmexInsightService amexInsightService = mock(AmexInsightService.class);
+        AmexFollowUpResponse answer = new AmexFollowUpResponse("Two concerts: £120 and £78.");
+        when(amexInsightService.askFollowUp("What were the events?")).thenReturn(answer);
+
+        ResponseEntity<AmexFollowUpResponse> response =
+                controllerWith(amexInsightService).askAmexFollowUp(new AmexFollowUpRequest("  What were the events?  "));
+
+        assertEquals(200, response.getStatusCode().value());
+        assertSame(answer, response.getBody());
+    }
+
+    @Test
+    void askAmexFollowUp_rejectsABlankOrOverlongQuestionWithoutCallingTheLlm() {
+        AmexInsightService amexInsightService = mock(AmexInsightService.class);
+        NetWorthController controller = controllerWith(amexInsightService);
+
+        assertEquals(400, controller.askAmexFollowUp(new AmexFollowUpRequest("   ")).getStatusCode().value());
+        assertEquals(400, controller.askAmexFollowUp(new AmexFollowUpRequest(null)).getStatusCode().value());
+        assertEquals(400, controller.askAmexFollowUp(new AmexFollowUpRequest("x".repeat(501))).getStatusCode().value());
+        verifyNoInteractions(amexInsightService);
+    }
+
+    private static NetWorthController controllerWith(AmexInsightService amexInsightService) {
+        return new NetWorthController(
+                mock(NetWorthSnapshotService.class),
+                mock(NetWorthHistoryService.class),
+                mock(NetWorthSnapshotRepository.class),
+                mock(ChartService.class),
+                mock(YnabTransactionService.class),
+                amexInsightService,
+                mock(PortfolioProjectionService.class),
+                mock(HealthInsightService.class));
     }
 
     @Test

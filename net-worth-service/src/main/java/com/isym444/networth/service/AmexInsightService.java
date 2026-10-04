@@ -3,6 +3,7 @@ package com.isym444.networth.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.isym444.networth.client.GeminiClient;
+import com.isym444.networth.dto.AmexFollowUpResponse;
 import com.isym444.networth.dto.AmexInsightsResponse;
 import com.isym444.networth.dto.AmexTransaction;
 import com.isym444.networth.repository.NetWorthSnapshotRepository;
@@ -65,14 +66,71 @@ public class AmexInsightService {
         return new AmexInsightsResponse(commentary, Instant.now(), transactions.size());
     }
 
-    private String buildPrompt(List<AmexTransaction> transactions) {
-        String json;
+    /**
+     * Answers a free-text follow-up about the spending insights (e.g. "what were the events and live
+     * entertainment?") from the same last-30-days transactions, with the latest stored commentary as
+     * context so the question can refer to its categories. Nothing is persisted.
+     */
+    public AmexFollowUpResponse askFollowUp(String question) {
+        List<AmexTransaction> transactions = ynabTransactionService.getRecentAmexTransactions(LOOKBACK_DAYS);
+        String answer = geminiClient.generateContent(
+                model, buildFollowUpPrompt(transactions, latestCommentary(), question), apiKey);
+        return new AmexFollowUpResponse(answer);
+    }
+
+    private String latestCommentary() {
+        for (String currency : repository.findDistinctCurrencies()) {
+            String commentary = repository.findFirstByCurrencyOrderByTimestampDescIdDesc(currency)
+                    .map(row -> row.getAiCommentary())
+                    .orElse(null);
+            if (commentary != null && !commentary.isBlank()) {
+                return commentary;
+            }
+        }
+        return null;
+    }
+
+    String buildFollowUpPrompt(List<AmexTransaction> transactions, String commentary, String question) {
+        String earlier = commentary == null
+                ? "(none yet)"
+                : commentary;
+        return """
+                You are a concise personal-finance analyst answering a follow-up question about the user's
+                recent Amex credit card spending. Below are an earlier spending summary you gave them and
+                the JSON array of their Amex transactions for the last 30 days (each with date, payee,
+                category, amount in the account's currency where positive = money spent, memo, and
+                account name).
+
+                Answer the question using only these transactions. When asked what a category or
+                figure consisted of, list the specific transactions behind it (date, payee, amount) and
+                check that they add up to the figure in the summary. If the transactions don't contain
+                enough to answer, say so rather than guessing.
+
+                Respond in plain text only — no markdown headers, no asterisks. Use "- " for bullet
+                points. Keep the response under 200 words.
+
+                Earlier summary:
+                """ + earlier + """
+
+
+                Transactions (JSON):
+                """ + transactionsJson(transactions) + """
+
+
+                Question:
+                """ + question;
+    }
+
+    private String transactionsJson(List<AmexTransaction> transactions) {
         try {
-            json = objectMapper.writeValueAsString(
-                    transactions.stream().map(PromptTransaction::from).toList());
+            return objectMapper.writeValueAsString(transactions.stream().map(PromptTransaction::from).toList());
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize transactions for the LLM prompt", e);
         }
+    }
+
+    private String buildPrompt(List<AmexTransaction> transactions) {
+        String json = transactionsJson(transactions);
         return """
                 You are a concise personal-finance analyst. Below is a JSON array of the user's recent
                 Amex credit card transactions (last 30 days), each with date, payee, category, amount
@@ -87,6 +145,7 @@ public class AmexInsightService {
                     - In the comprehensive breakdown, make the categories as imformative as possible so I can recall what the category included
                     - For example when saying Dining Out & Treats, dining out is fine but treats is too general
                     - Similarly, you previously gave 2 categories as "Dining Out & Treats" and "Shopping & Misc". Here it is too hard to pinpoint the difference between Treats and Shopping
+                    - If you make a category like events & live entertainment, in brackets specify a more detailed breakdown e.g. Classical Music
                 - A brief summary of the top 2-3 categories by total spend.
                 - Any notable, unusual, or one-off transactions worth flagging.
                 - Any visible trend (e.g. increasing spend in a category, recurring charges).

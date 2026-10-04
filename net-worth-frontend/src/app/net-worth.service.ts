@@ -42,6 +42,10 @@ export interface AmexInsightsResponse {
   transactionCount: number;
 }
 
+export interface AmexFollowUpResponse {
+  answer: string;
+}
+
 export interface HealthInsightResponse {
   commentary: string;
   generatedAt: string;
@@ -74,6 +78,10 @@ export class NetWorthService {
 
   refreshAmexInsights(): Observable<AmexInsightsResponse> {
     return this.http.post<AmexInsightsResponse>(`${this.baseUrl}/api/v1/amex/insights`, {});
+  }
+
+  askAmexFollowUp(question: string): Observable<AmexFollowUpResponse> {
+    return this.http.post<AmexFollowUpResponse>(`${this.baseUrl}/api/v1/amex/insights/ask`, { question });
   }
 
   getHealthInsight(): Observable<HealthInsightResponse | null> {

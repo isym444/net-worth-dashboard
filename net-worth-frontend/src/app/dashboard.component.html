@@ -373,6 +373,31 @@
       </div>
       @if (latestSnapshot.aiCommentary) {
         <p class="insights-card__text">{{ latestSnapshot.aiCommentary }}</p>
+        @for (item of followUps(); track $index) {
+          <div class="follow-up">
+            <p class="follow-up__question">{{ item.question }}</p>
+            <p class="insights-card__text">{{ item.answer }}</p>
+          </div>
+        }
+        <form class="follow-up__form" (submit)="$event.preventDefault(); askFollowUp(followUpInput.value, followUpInput)">
+          <input
+            #followUpInput
+            type="text"
+            maxlength="500"
+            placeholder="Ask a follow-up, e.g. what were the events &amp; live entertainment?"
+            aria-label="Ask a follow-up question about your spending"
+            [disabled]="askingFollowUp()"
+          />
+          <button type="submit" [disabled]="askingFollowUp()">
+            @if (askingFollowUp()) {
+              <span class="spinner"></span>
+            }
+            {{ askingFollowUp() ? 'Thinking…' : 'Ask' }}
+          </button>
+        </form>
+        @if (followUpError()) {
+          <p class="error follow-up__error">{{ followUpError() }}</p>
+        }
       } @else {
         <p class="muted">No insights yet. Click "Refresh insights" to generate one.</p>
       }

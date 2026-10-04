@@ -1,5 +1,7 @@
 package com.isym444.networth.controller;
 
+import com.isym444.networth.dto.AmexFollowUpRequest;
+import com.isym444.networth.dto.AmexFollowUpResponse;
 import com.isym444.networth.dto.AmexInsightsResponse;
 import com.isym444.networth.dto.AmexTransaction;
 import com.isym444.networth.dto.HealthInsightResponse;
@@ -30,6 +32,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1")
 public class NetWorthController {
+
+    private static final int MAX_FOLLOW_UP_QUESTION_LENGTH = 500;
 
     private final NetWorthSnapshotService snapshotService;
     private final NetWorthHistoryService historyService;
@@ -81,6 +85,16 @@ public class NetWorthController {
     @PostMapping("/amex/insights")
     public ResponseEntity<AmexInsightsResponse> refreshAmexInsights() {
         return ResponseEntity.ok(amexInsightService.refreshAndPersist());
+    }
+
+    /** Free-text follow-up on the spending insights; calls the LLM but, unlike /amex/insights, stores nothing. */
+    @PostMapping("/amex/insights/ask")
+    public ResponseEntity<AmexFollowUpResponse> askAmexFollowUp(@RequestBody AmexFollowUpRequest request) {
+        String question = request.question() == null ? "" : request.question().trim();
+        if (question.isEmpty() || question.length() > MAX_FOLLOW_UP_QUESTION_LENGTH) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(amexInsightService.askFollowUp(question));
     }
 
     /** Returns whatever the daily cron last cached — never calls the LLM. */

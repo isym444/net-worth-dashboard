@@ -31,6 +31,9 @@ export class DashboardComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly takingSnapshot = signal(false);
   protected readonly refreshingInsights = signal(false);
+  protected readonly followUps = signal<{ question: string; answer: string }[]>([]);
+  protected readonly askingFollowUp = signal(false);
+  protected readonly followUpError = signal<string | null>(null);
   protected readonly healthInsight = signal<HealthInsightResponse | null>(null);
   protected readonly refreshingHealthInsight = signal(false);
   protected readonly chartUrl = signal<string | null>(null);
@@ -115,6 +118,27 @@ export class DashboardComponent implements OnInit {
       error: (err: unknown) => {
         this.refreshingInsights.set(false);
         this.error.set(this.extractError(err));
+      },
+    });
+  }
+
+  /** Asks the LLM a follow-up about the spending insights; the answer is kept on screen only, never stored. */
+  askFollowUp(rawQuestion: string, input: HTMLInputElement): void {
+    const question = rawQuestion.trim();
+    if (question.length === 0 || this.askingFollowUp()) {
+      return;
+    }
+    this.askingFollowUp.set(true);
+    this.followUpError.set(null);
+    this.netWorthService.askAmexFollowUp(question).subscribe({
+      next: (response) => {
+        this.askingFollowUp.set(false);
+        this.followUps.update((list) => [...list, { question, answer: response.answer }]);
+        input.value = '';
+      },
+      error: (err: unknown) => {
+        this.askingFollowUp.set(false);
+        this.followUpError.set(this.extractError(err));
       },
     });
   }
