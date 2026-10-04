@@ -143,6 +143,7 @@ public class AmexInsightService {
                 Cover:
                 - A comprehensive breakdown of the last 30 days' spending where the breakdown MUST add up to total spending
                     - In the comprehensive breakdown, make the categories as imformative as possible so I can recall what the category included
+                    - Note that Musiq Group is grand piano rental. So make that its own cateogry rather than putting it in "Events & live entertainment"
                     - For example when saying Dining Out & Treats, dining out is fine but treats is too general
                     - Similarly, you previously gave 2 categories as "Dining Out & Treats" and "Shopping & Misc". Here it is too hard to pinpoint the difference between Treats and Shopping
                     - If you make a category like events & live entertainment, in brackets specify a more detailed breakdown e.g. Classical Music
