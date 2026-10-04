@@ -52,6 +52,29 @@ final class WidgetModelTests: XCTestCase {
         return r
     }
 
+    // MARK: other currencies
+
+    func testOtherCurrenciesComeFromTheLatestSnapshot() {
+        let h = HistoryResponse(snapshots: [
+            Snapshot(id: 1, timestamp: "2026-09-28T07:00:00Z", currency: "GBP", grandTotal: 40_000, grandTotalUsd: 1, grandTotalMxn: 2, grandTotalJpy: 3),
+            Snapshot(id: 2, timestamp: "2026-09-29T07:00:00Z", currency: "GBP", grandTotal: 50_000,
+                     grandTotalUsd: 67_000.4, grandTotalMxn: 1_225_000, grandTotalJpy: 10_000_000),
+        ])
+        XCTAssertEqual(ready(h).otherCurrencies, ["67,000ドル", "1,225,000ペソ", "10,000,000円"])
+    }
+
+    func testPeakOtherCurrenciesUseTheLatestImpliedRates() {
+        let h = HistoryResponse(
+            snapshots: [Snapshot(id: 1, timestamp: "2026-09-29T07:00:00Z", currency: "GBP", grandTotal: 50_000,
+                                 grandTotalUsd: 67_000, grandTotalMxn: 1_000_000, grandTotalJpy: 10_000_000)],
+            peakNetWorth: 55_000)
+        XCTAssertEqual(ready(h).peakOtherCurrencies, ["73,700ドル", "1,100,000ペソ", "11,000,000円"])
+    }
+
+    func testOtherCurrenciesAreEmptyWithoutConversions() {
+        XCTAssertEqual(ready(history(100_000)).otherCurrencies, [])
+    }
+
     // MARK: daily spend
 
     private func withBank(_ chase: Double?, _ amex: Double?) -> HistoryResponse {
@@ -344,6 +367,34 @@ final class WidgetModelTests: XCTestCase {
         XCTAssertTrue(s.periodChanges.isEmpty)
         XCTAssertTrue(s.trend.isEmpty)
         XCTAssertEqual(s.trendSpan, "")
+    }
+
+    // MARK: expected return at the assumed growth
+
+    func testReturnsAreWhatTheNetWorthEarnsInAYearAndAMonthAtTheAssumedRate() {
+        let s = ready(history(100_000))
+        XCTAssertEqual(s.returns.map { $0.label }, ["1年", "1か月"])
+        XCTAssertEqual(s.returns[0].text, "+7,000ポンド")     // 7% of 100,000
+        XCTAssertEqual(s.returns[1].text, "+565ポンド")       // 1.07^(1/12) - 1 = 0.5654% of 100,000
+        XCTAssertTrue(s.returns.allSatisfy { $0.up == true })
+    }
+
+    func testReturnsFollowTheLatestSnapshotAndAreIndependentOfTheContributionSetting() {
+        let a = ready(history(50_000, 100_000)).returns.map { $0.text }
+        XCTAssertEqual(a, ["+7,000ポンド", "+565ポンド"])
+        XCTAssertEqual(ready(history(100_000), config: WidgetConfig(withContributions: false)).returns.map { $0.text }, a)
+    }
+
+    func testANegativeNetWorthHasANegativeReturn() {
+        let s = ready(history(-10_000))
+        XCTAssertEqual(s.returns.map { $0.text }, ["-700ポンド", "-57ポンド"])
+        XCTAssertTrue(s.returns.allSatisfy { $0.up == false })
+    }
+
+    func testAZeroNetWorthHasNoDirection() {
+        let s = ready(history(0))
+        XCTAssertEqual(s.returns.map { $0.text }, ["+0ポンド", "+0ポンド"])
+        XCTAssertTrue(s.returns.allSatisfy { $0.up == nil })
     }
 
     func testPeakIsTheHighestSnapshotEver() {

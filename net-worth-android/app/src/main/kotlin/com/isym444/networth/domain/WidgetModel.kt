@@ -3,6 +3,7 @@ package com.isym444.networth.domain
 import com.isym444.networth.data.AppSettings
 import com.isym444.networth.data.CacheSnapshot
 import com.isym444.networth.data.HistoryResponse
+import com.isym444.networth.data.Snapshot
 import com.isym444.networth.data.SyncStatus
 import java.time.Instant
 import java.time.ZoneId
@@ -50,6 +51,8 @@ sealed interface WidgetState {
         val breakeven: NextGoal?,                        // net worth where a month of return >= the monthly contribution; null without contributions
         val periodChanges: List<PeriodChange>,           // 7 days / 30 days / since the first snapshot ("全期間"), where history allows
         val peak: String?,                               // "最高値 49,153ポンド"
+        val otherCurrencies: List<String>,               // ["58,123ドル", "1,234,567ペソ", "12,345,678円"]; empty when the snapshot has no conversions
+        val peakOtherCurrencies: List<String>,           // the peak in USD/MXN/JPY at the latest snapshot's implied rates; empty without conversions
     ) : WidgetState {
         val headline: String get() = headlineAmount + headlineUnit
 
@@ -128,7 +131,17 @@ object WidgetModel {
             breakeven = breakeven(latest.grandTotal, unit, contribution),
             periodChanges = periodChanges(points, unit),
             peak = peakTotal?.let { "最高値 " + Money.full(it, unit) },
+            otherCurrencies = otherCurrencies(latest, latest.grandTotal),
+            peakOtherCurrencies = peakTotal?.let { otherCurrencies(latest, it) } ?: emptyList(),
         )
+    }
+
+    /** The snapshot's USD/MXN/JPY conversions, scaled so they stand for `total` (its own grand total gives the rate). */
+    private fun otherCurrencies(snapshot: Snapshot, total: Double): List<String> {
+        if (snapshot.grandTotal == 0.0) return emptyList()
+        val factor = total / snapshot.grandTotal
+        return listOf("USD" to snapshot.grandTotalUsd, "MXN" to snapshot.grandTotalMxn, "JPY" to snapshot.grandTotalJpy)
+            .mapNotNull { (code, amount) -> amount?.let { Money.full(it * factor, Money.unit(code)) } }
     }
 
     private fun spendLine(lead: String, amount: Double, unit: String) =

@@ -21,6 +21,38 @@ struct Headline: View {
     }
 }
 
+/// The total in other currencies (USD, MXN, JPY) on one line, shown under the headline.
+struct OtherCurrenciesLine: View {
+    @Environment(\.colorScheme) private var scheme
+    let amounts: [String]
+    var body: some View {
+        if !amounts.isEmpty {
+            Text(amounts.joined(separator: "  ·  ")).font(.system(size: 12))
+                .foregroundStyle(Palette(scheme).secondary).lineLimit(1).minimumScaleFactor(0.7)
+        }
+    }
+}
+
+/// Expected return at the assumed growth on one line ("運用益 1年 +3,423ポンド  1か月 +277ポンド"), shown under the change line.
+struct ReturnsLine: View {
+    @Environment(\.colorScheme) private var scheme
+    let returns: [PeriodChange]
+    var body: some View {
+        if !returns.isEmpty {
+            HStack(spacing: 10) {
+                Text("運用益").font(.system(size: 12)).foregroundStyle(Palette(scheme).secondary)
+                ForEach(Array(returns.enumerated()), id: \.offset) { _, r in
+                    HStack(spacing: 5) {
+                        Text(r.label).font(.system(size: 12)).foregroundStyle(Palette(scheme).secondary)
+                        Text(r.text).font(.system(size: 12, weight: .medium)).foregroundStyle(Palette(scheme).direction(r.up))
+                    }
+                }
+            }
+            .lineLimit(1).padding(.vertical, 1.5)
+        }
+    }
+}
+
 struct ChangeLine: View {
     @Environment(\.colorScheme) private var scheme
     let state: WidgetState.Ready

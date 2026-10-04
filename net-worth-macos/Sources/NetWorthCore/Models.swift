@@ -8,10 +8,14 @@ public struct Snapshot: Codable, Equatable {
     public var grandTotal: Double
     public var chaseTotal: Double?        // null on old snapshots, which predate the column
     public var amexDebtTotal: Double?
+    public var grandTotalUsd: Double?     // grandTotal converted at the rate of the day; null on old snapshots
+    public var grandTotalMxn: Double?
+    public var grandTotalJpy: Double?
 
     public init(
         id: Int64 = 0, timestamp: String = "", currency: String = "GBP", grandTotal: Double = 0,
-        chaseTotal: Double? = nil, amexDebtTotal: Double? = nil
+        chaseTotal: Double? = nil, amexDebtTotal: Double? = nil,
+        grandTotalUsd: Double? = nil, grandTotalMxn: Double? = nil, grandTotalJpy: Double? = nil
     ) {
         self.id = id
         self.timestamp = timestamp
@@ -19,9 +23,14 @@ public struct Snapshot: Codable, Equatable {
         self.grandTotal = grandTotal
         self.chaseTotal = chaseTotal
         self.amexDebtTotal = amexDebtTotal
+        self.grandTotalUsd = grandTotalUsd
+        self.grandTotalMxn = grandTotalMxn
+        self.grandTotalJpy = grandTotalJpy
     }
 
-    private enum CodingKeys: String, CodingKey { case id, timestamp, currency, grandTotal, chaseTotal, amexDebtTotal }
+    private enum CodingKeys: String, CodingKey {
+        case id, timestamp, currency, grandTotal, chaseTotal, amexDebtTotal, grandTotalUsd, grandTotalMxn, grandTotalJpy
+    }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -31,6 +40,9 @@ public struct Snapshot: Codable, Equatable {
         grandTotal = try c.decodeIfPresent(Double.self, forKey: .grandTotal) ?? 0
         chaseTotal = try c.decodeIfPresent(Double.self, forKey: .chaseTotal)
         amexDebtTotal = try c.decodeIfPresent(Double.self, forKey: .amexDebtTotal)
+        grandTotalUsd = try c.decodeIfPresent(Double.self, forKey: .grandTotalUsd)
+        grandTotalMxn = try c.decodeIfPresent(Double.self, forKey: .grandTotalMxn)
+        grandTotalJpy = try c.decodeIfPresent(Double.self, forKey: .grandTotalJpy)
     }
 }
 

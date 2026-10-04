@@ -84,6 +84,9 @@ public class AmexInsightService {
 
                 Cover:
                 - A comprehensive breakdown of the last 30 days' spending where the breakdown MUST add up to total spending
+                    - In the comprehensive breakdown, make the categories as imformative as possible so I can recall what the category included
+                    - For example when saying Dining Out & Treats, dining out is fine but treats is too general
+                    - Similarly, you previously gave 2 categories as "Dining Out & Treats" and "Shopping & Misc". Here it is too hard to pinpoint the difference between Treats and Shopping
                 - A brief summary of the top 2-3 categories by total spend.
                 - Any notable, unusual, or one-off transactions worth flagging.
                 - Any visible trend (e.g. increasing spend in a category, recurring charges).

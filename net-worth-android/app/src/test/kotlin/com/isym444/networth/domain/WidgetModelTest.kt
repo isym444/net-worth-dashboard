@@ -321,6 +321,31 @@ class WidgetModelTest {
         assertNull(old.amexDebtTotal)
     }
 
+    // ---- other currencies ------------------------------------------------------------------------------
+
+    @Test fun otherCurrenciesComeFromTheLatestSnapshot() {
+        val h = HistoryResponse(snapshots = listOf(
+            Snapshot(id = 1, timestamp = "2026-09-28T07:00:00Z", grandTotal = 40_000.0, grandTotalUsd = 1.0, grandTotalMxn = 2.0, grandTotalJpy = 3.0),
+            Snapshot(id = 2, timestamp = "2026-09-29T07:00:00Z", grandTotal = 50_000.0,
+                grandTotalUsd = 67_000.4, grandTotalMxn = 1_225_000.0, grandTotalJpy = 10_000_000.0),
+        ))
+        assertEquals(listOf("67,000ドル", "1,225,000ペソ", "10,000,000円"), ready(h).otherCurrencies)
+    }
+
+    @Test fun peakOtherCurrenciesUseTheLatestImpliedRates() {
+        val h = HistoryResponse(
+            snapshots = listOf(Snapshot(id = 1, timestamp = "2026-09-29T07:00:00Z", grandTotal = 50_000.0,
+                grandTotalUsd = 67_000.0, grandTotalMxn = 1_000_000.0, grandTotalJpy = 10_000_000.0)),
+            peakNetWorth = 55_000.0,
+        )
+        assertEquals(listOf("73,700ドル", "1,100,000ペソ", "11,000,000円"), ready(h).peakOtherCurrencies)
+    }
+
+    @Test fun otherCurrenciesAreEmptyWithoutConversions() {
+        assertEquals(emptyList<String>(), ready(history(100_000.0)).otherCurrencies)
+        assertEquals(emptyList<String>(), ready(history(100_000.0)).peakOtherCurrencies)
+    }
+
     // ---- peak ------------------------------------------------------------------------------------------
 
     @Test fun peakUsesTheServersPeakWhenTheThinnedSnapshotsMissIt() =

@@ -157,6 +157,7 @@ private fun FullLayout(s: WidgetState.Ready) {
         Column {
             Label("純資産")
             Headline(s, amountSize = 30.sp)
+            OtherCurrenciesLine(s.otherCurrencies)
             ChangeLine(s)
             s.oneYear?.let { Text("1年後の予想 ≈ $it", style = TextStyle(color = Palette.secondary, fontSize = 12.sp), maxLines = 1) }
         }
@@ -166,6 +167,7 @@ private fun FullLayout(s: WidgetState.Ready) {
                 Label("増減の推移")
                 s.periodChanges.forEach { PeriodLine(it, vertical = 1.dp) }
                 s.peak?.let { Text(it, modifier = GlanceModifier.padding(vertical = 1.dp), style = TextStyle(color = Palette.secondary, fontSize = 12.sp), maxLines = 1) }
+                OtherCurrenciesLine(s.peakOtherCurrencies)
             }
         }
         Spacer(GlanceModifier.height(5.dp))
@@ -208,6 +210,7 @@ private fun WideLayout(s: WidgetState.Ready) {
                 Column {
                     Label("純資産")
                     Headline(s, amountSize = 30.sp)
+                    OtherCurrenciesLine(s.otherCurrencies)
                     ChangeLine(s)
                     s.oneYear?.let { Text("1年後の予想 ≈ $it", style = TextStyle(color = Palette.secondary, fontSize = 12.sp), maxLines = 1) }
                 }
@@ -217,6 +220,7 @@ private fun WideLayout(s: WidgetState.Ready) {
                         Label("増減の推移")
                         s.periodChanges.forEach { PeriodLine(it) }
                         s.peak?.let { Text(it, modifier = GlanceModifier.padding(vertical = 2.dp), style = TextStyle(color = Palette.secondary, fontSize = 12.sp), maxLines = 1) }
+                        OtherCurrenciesLine(s.peakOtherCurrencies)
                     }
                 }
             }
@@ -376,6 +380,13 @@ private fun Headline(s: WidgetState.Ready, amountSize: TextUnit) {
 @Composable
 private fun Label(text: String) =
     Text(text, style = TextStyle(color = Palette.secondary, fontSize = 11.sp), maxLines = 1)
+
+/** The total in other currencies (USD, MXN, JPY) on one line; 11sp because Glance cannot shrink text to fit. */
+@Composable
+private fun OtherCurrenciesLine(amounts: List<String>) {
+    if (amounts.isEmpty()) return
+    Text(amounts.joinToString(" · "), style = TextStyle(color = Palette.secondary, fontSize = 11.sp), maxLines = 1)
+}
 
 @Composable
 private fun ChangeLine(s: WidgetState.Ready) {

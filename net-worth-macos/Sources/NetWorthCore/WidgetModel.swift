@@ -31,6 +31,7 @@ public enum WidgetState: Equatable {
     public struct Ready: Equatable {
         public let headlineAmount: String            // "184,320"
         public let headlineUnit: String              // "ポンド" (drawn smaller, next to the amount)
+        public let otherCurrencies: [String]         // ["58,123ドル", "1,234,567ペソ", "12,345,678円"]; empty when the snapshot has no conversions
         public let change: String?                   // "+1,234ポンド (+0.7%)" / "変化なし" / nil when there is no previous snapshot
         public let changeUp: Bool?                   // true = up, false = down, nil = neutral
         public let updated: String                   // "3時間前に更新"
@@ -47,7 +48,9 @@ public enum WidgetState: Equatable {
         public let nextGoal: NextGoal?               // nil when every milestone is reached
         public let breakeven: NextGoal?              // net worth where a month of return >= the monthly contribution; nil without contributions
         public let periodChanges: [PeriodChange]     // 7日間 / 30日間 / 全期間, where history allows
+        public let returns: [PeriodChange]           // 1年 / 1か月: what the current net worth earns at the assumed annual return ("+3,423ポンド")
         public let peak: String?                     // "最高値 49,153ポンド"
+        public let peakOtherCurrencies: [String]     // the peak in USD/MXN/JPY at the latest snapshot's implied rates; empty without conversions
         public let trend: [TrendPoint]               // totals over the last two years, oldest first
         public let trendSpan: String                 // "2年間", "5か月間", "12日間"
 
@@ -113,6 +116,7 @@ public enum WidgetModel {
         return .ready(.init(
             headlineAmount: Money.number(latest.grandTotal),
             headlineUnit: unit,
+            otherCurrencies: otherCurrencies(of: latest, scaledTo: latest.grandTotal),
             change: change,
             changeUp: up,
             updated: updatedText(ageMs),
@@ -131,13 +135,23 @@ public enum WidgetModel {
             nextGoal: nextGoal(total: latest.grandTotal, unit: unit, contribution: contribution),
             breakeven: breakeven(total: latest.grandTotal, unit: unit, contribution: contribution),
             periodChanges: periodChanges(points, unit: unit),
+            returns: expectedReturns(total: latest.grandTotal, unit: unit),
             peak: peak,
+            peakOtherCurrencies: peakTotal.map { otherCurrencies(of: latest, scaledTo: $0) } ?? [],
             trend: trendPoints.map { TrendPoint(date: $0.date, total: $0.total) },
             trendSpan: trendPoints.first.map { spanText(days: daysBetween($0.date, trendPoints.last!.date)) } ?? ""
         ))
     }
 
     // MARK: - pieces
+
+    /// The snapshot's USD/MXN/JPY conversions, scaled so they stand for `total` (its own grand total gives the rate).
+    private static func otherCurrencies(of snapshot: Snapshot, scaledTo total: Double) -> [String] {
+        guard snapshot.grandTotal != 0 else { return [] }
+        let factor = total / snapshot.grandTotal
+        return [("USD", snapshot.grandTotalUsd), ("MXN", snapshot.grandTotalMxn), ("JPY", snapshot.grandTotalJpy)]
+            .compactMap { code, amount in amount.map { Money.full($0 * factor, unit: Money.unit(code)) } }
+    }
 
     private static func spendLine(lead: String, amount: Double, unit: String) -> StatLine {
         StatLine(lead: lead, value: Money.number(amount), tail: unit, negative: Money.roundHalfUp(amount) < 0)
@@ -199,6 +213,16 @@ public enum WidgetModel {
         let (text, up) = changeLine(delta: last.total - first.total, previousTotal: first.total, unit: unit)
         if let text { out.append(PeriodChange(label: "全期間", text: text, up: up)) }
         return out
+    }
+
+    /// What the current net worth would earn in one year and in one month at `ProjectionConfig.annualReturn`
+    /// (compounded monthly, the same monthly rate as the projections), before any contributions.
+    private static func expectedReturns(total: Double, unit: String) -> [PeriodChange] {
+        let annual = ProjectionConfig.annualReturn
+        return [("1年", total * annual), ("1か月", total * (pow(1 + annual, 1.0 / 12) - 1))].map { label, gain in
+            let up: Bool? = Money.roundHalfUp(gain) == 0 ? nil : gain > 0
+            return PeriodChange(label: label, text: (gain < 0 ? "-" : "+") + Money.full(abs(gain), unit: unit), up: up)
+        }
     }
 
     private static func nextGoal(total: Double, unit: String, contribution: Double) -> NextGoal? {

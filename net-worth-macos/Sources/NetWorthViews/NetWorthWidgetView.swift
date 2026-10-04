@@ -104,10 +104,12 @@ private struct LargeLayout: View {
         VStack(alignment: .leading, spacing: 0) {
             Label11("純資産")
             Headline(state: s, size: 30)
+            OtherCurrenciesLine(amounts: s.otherCurrencies)
             ChangeLine(state: s)
             if let oneYear = s.oneYear {
                 Text("1年後の予想 ≈ \(oneYear)").font(.system(size: 12)).foregroundStyle(Palette(scheme).secondary).lineLimit(1)
             }
+            ReturnsLine(returns: s.returns)
             Spacer(minLength: 6)
             Label11("目標までの期間")
             Text(s.assumption).font(.system(size: 10)).foregroundStyle(Palette(scheme).secondary).lineLimit(1)
@@ -134,16 +136,19 @@ private struct ExtraLargeLayout: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Label11("純資産")
                     Headline(state: s, size: 30)
+                    OtherCurrenciesLine(amounts: s.otherCurrencies)
                     ChangeLine(state: s)
                     if let oneYear = s.oneYear {
                         Text("1年後の予想 ≈ \(oneYear)").font(.system(size: 12)).foregroundStyle(Palette(scheme).secondary).lineLimit(1)
                     }
+                    ReturnsLine(returns: s.returns)
                     if !s.periodChanges.isEmpty || s.peak != nil {
                         Spacer().frame(height: 8)
                         Label11("増減の推移")
                         ForEach(Array(s.periodChanges.enumerated()), id: \.offset) { _, c in PeriodRow(change: c) }
                         if let peak = s.peak {
                             Text(peak).font(.system(size: 12)).foregroundStyle(Palette(scheme).secondary).lineLimit(1).padding(.vertical, 1.5)
+                            OtherCurrenciesLine(amounts: s.peakOtherCurrencies)
                         }
                     }
                     Spacer(minLength: 0)

@@ -20,6 +20,9 @@ data class Snapshot(
     val grandTotal: Double = 0.0,
     val chaseTotal: Double? = null,                       // null on old snapshots, which predate the column
     val amexDebtTotal: Double? = null,
+    val grandTotalUsd: Double? = null,                    // grandTotal converted at the rate of the day; null on old snapshots
+    val grandTotalMxn: Double? = null,
+    val grandTotalJpy: Double? = null,
 )
 
 /** Mirrors `NetWorthHistoryResponse` (net-worth-service). Every projection is nullable. */
