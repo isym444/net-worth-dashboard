@@ -35,6 +35,9 @@ public class AmexInsightService {
 
     private static final int LOOKBACK_DAYS = 30;
     private static final String CURRENCY_SYMBOL = "£";
+    private static final java.util.regex.Pattern CARD_REPAYMENT = java.util.regex.Pattern.compile(
+            "payment received|payment[ -]+thank you|thank you for your payment|^\\s*transfer\\b|direct debit payment",
+            java.util.regex.Pattern.CASE_INSENSITIVE);
     private static final String UNASSIGNED_CATEGORY = "Other (uncategorised)";
 
     private final YnabTransactionService ynabTransactionService;
@@ -57,8 +60,27 @@ public class AmexInsightService {
 
     /** Generates fresh commentary without persisting it anywhere. */
     public String generateCommentary() {
-        List<AmexTransaction> transactions = ynabTransactionService.getRecentAmexTransactions(LOOKBACK_DAYS);
+        List<AmexTransaction> transactions = recentSpendingTransactions();
         return generateInsight(transactions);
+    }
+
+    /**
+     * Recent Amex transactions minus card repayments. A "PAYMENT RECEIVED" is money paid onto the
+     * card from a bank account, not a refund — leaving it in nets it against real spending and
+     * produces a nonsense total and negative categories.
+     */
+    private List<AmexTransaction> recentSpendingTransactions() {
+        return ynabTransactionService.getRecentAmexTransactions(LOOKBACK_DAYS).stream()
+                .filter(t -> !isCardRepayment(t))
+                .toList();
+    }
+
+    static boolean isCardRepayment(AmexTransaction t) {
+        if (t.amount() <= 0) {
+            return false; // only inflows can be repayments
+        }
+        String text = (t.payeeName() == null ? "" : t.payeeName()) + " " + (t.memo() == null ? "" : t.memo());
+        return CARD_REPAYMENT.matcher(text).find();
     }
 
     /**
@@ -226,7 +248,7 @@ public class AmexInsightService {
 
     /** Generates fresh commentary and writes it onto the latest snapshot row for every currency. */
     public AmexInsightsResponse refreshAndPersist() {
-        List<AmexTransaction> transactions = ynabTransactionService.getRecentAmexTransactions(LOOKBACK_DAYS);
+        List<AmexTransaction> transactions = recentSpendingTransactions();
         String commentary = generateInsight(transactions);
 
         for (String currency : repository.findDistinctCurrencies()) {
@@ -246,7 +268,7 @@ public class AmexInsightService {
      * context so the question can refer to its categories. Nothing is persisted.
      */
     public AmexFollowUpResponse askFollowUp(String question) {
-        List<AmexTransaction> transactions = ynabTransactionService.getRecentAmexTransactions(LOOKBACK_DAYS);
+        List<AmexTransaction> transactions = recentSpendingTransactions();
         String answer = llmClient.generateContent(
                 model, buildFollowUpPrompt(transactions, latestCommentary(), question));
         return new AmexFollowUpResponse(answer);

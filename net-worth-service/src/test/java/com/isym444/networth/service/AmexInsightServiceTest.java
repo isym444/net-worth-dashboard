@@ -133,4 +133,28 @@ class AmexInsightServiceTest {
         verify(llm, org.mockito.Mockito.times(2)).generateContent(anyString(), prompt.capture());
         assertTrue(prompt.getAllValues().get(1).contains("exact total spending is £309.13"));
     }
+
+    @Test
+    void generateCommentary_ignoresCardRepaymentsSoTheyDoNotNetAgainstSpending() {
+        List<AmexTransaction> transactions = new java.util.ArrayList<>(threeTransactions());
+        transactions.add(new AmexTransaction(LocalDate.of(2026, 10, 6), "PAYMENT RECEIVED", null, 383.81, "", "Amex"));
+        when(ynab.getRecentAmexTransactions(30)).thenReturn(transactions);
+        when(llm.generateContent(anyString(), anyString())).thenReturn(
+                "{\"categories\":[{\"name\":\"Groceries\",\"transactionIds\":[0,1,2]}]}", "narrative");
+
+        String commentary = service().generateCommentary();
+
+        assertTrue(commentary.startsWith("Total spending (last 30 days): £309.13 across 3 transactions"), commentary);
+    }
+
+    @Test
+    void isCardRepayment_onlyMatchesInflowsThatLookLikePayments() {
+        assertTrue(AmexInsightService.isCardRepayment(
+                new AmexTransaction(LocalDate.now(), "PAYMENT RECEIVED - THANK YOU", null, 100.0, null, "Amex")));
+        // a refund from a shop is real (negative) spending, and a spend is never a repayment
+        assertTrue(!AmexInsightService.isCardRepayment(
+                new AmexTransaction(LocalDate.now(), "Decathlon", null, 14.99, "refund", "Amex")));
+        assertTrue(!AmexInsightService.isCardRepayment(
+                new AmexTransaction(LocalDate.now(), "PAYMENT RECEIVED", null, -5.0, null, "Amex")));
+    }
 }
