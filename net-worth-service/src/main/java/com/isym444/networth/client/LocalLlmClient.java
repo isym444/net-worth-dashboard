@@ -12,6 +12,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,8 +27,8 @@ public class LocalLlmClient {
 
     private static final String CHAT_COMPLETIONS_PATH = "/v1/chat/completions";
 
-    // Local models can be slow, especially on first load, so allow a generous read timeout
-    // and retry on timeouts/5xx.
+    // Local models can be slow, especially on first load, so allow a generous read timeout.
+    // Network errors and 5xx/429 are retried; read timeouts are not (see isRetryable).
     private static final int MAX_ATTEMPTS = 3;
     private static final Duration INITIAL_BACKOFF = Duration.ofSeconds(3);
 
@@ -38,6 +39,11 @@ public class LocalLlmClient {
     @Value("${networth.llm.api-key:}")
     private String apiKey;
 
+    // Qwen3-style models "think" by default, which at local generation speeds can take many
+    // minutes. "none" disables that; blank omits the field (for servers that reject it).
+    @Value("${networth.llm.reasoning-effort:none}")
+    private String reasoningEffort;
+
     private final RestClient restClient = RestClient.builder()
             .requestFactory(timeoutRequestFactory())
             .build();
@@ -45,7 +51,7 @@ public class LocalLlmClient {
     private static SimpleClientHttpRequestFactory timeoutRequestFactory() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(8));
-        factory.setReadTimeout(Duration.ofSeconds(300));
+        factory.setReadTimeout(Duration.ofSeconds(600));
         return factory;
     }
 
@@ -56,10 +62,13 @@ public class LocalLlmClient {
         // Accept the base URL with or without a trailing /v1 (e.g. http://host:11434 or http://host:11434/v1).
         String uri = baseUrl.replaceAll("/+$", "").replaceAll("/v1$", "") + CHAT_COMPLETIONS_PATH;
 
-        Map<String, Object> body = Map.of(
-                "model", model,
-                "stream", false,
-                "messages", List.of(Map.of("role", "user", "content", prompt)));
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", model);
+        body.put("stream", false);
+        body.put("messages", List.of(Map.of("role", "user", "content", prompt)));
+        if (reasoningEffort != null && !reasoningEffort.isBlank()) {
+            body.put("reasoning_effort", reasoningEffort);
+        }
 
         JsonNode response = null;
         RestClientException lastError = null;
@@ -101,10 +110,19 @@ public class LocalLlmClient {
         return text.trim();
     }
 
-    /** Retries on timeouts/network errors and 5xx/429 responses; not on 4xx (retrying won't help those). */
+    /**
+     * Retries on connection errors and 5xx/429 responses; not on 4xx (retrying won't help those)
+     * and not on read timeouts — the model is still generating, so a retry would just queue
+     * another long request behind it on a single-slot server.
+     */
     private static boolean isRetryable(RestClientException e) {
         if (e instanceof RestClientResponseException re) {
             return re.getStatusCode().is5xxServerError() || re.getStatusCode().value() == 429;
+        }
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof java.net.SocketTimeoutException && String.valueOf(t.getMessage()).contains("Read timed out")) {
+                return false;
+            }
         }
         return true;
     }

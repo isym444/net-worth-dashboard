@@ -39,6 +39,7 @@ data point.
 | `LLM_BASE_URL` | no | Base URL of your local OpenAI-compatible LLM server (calls `{base}/v1/chat/completions`), used for Amex/health insights. Default `http://llm.isym.uk:11434/v1`. |
 | `LLM_MODEL` | no | Model name sent to the local server. Default `qwen3.8:27b-q4_K_M` |
 | `LLM_API_KEY` | no | Optional bearer token, only if your local server requires one. |
+| `LLM_REASONING_EFFORT` | no | Sent as `reasoning_effort` to the server. Default `none` disables Qwen3-style thinking (much faster). Set blank to omit the field. |
 | `FRONTEND_ORIGIN` | no | Origin(s) allowed to call the API via CORS (comma-separated). Default `http://localhost:4200` for local `ng serve`. |
 
 Every credential is optional in isolation — leave a pair blank to skip that

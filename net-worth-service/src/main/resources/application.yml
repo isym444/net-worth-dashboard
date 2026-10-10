@@ -70,6 +70,7 @@ networth:
     base-url: ${LLM_BASE_URL:http://llm.isym.uk:11434/v1}
     api-key: ${LLM_API_KEY:}
     model: ${LLM_MODEL:qwen3.8:27b-q4_K_M}
+    reasoning-effort: ${LLM_REASONING_EFFORT:none}
   wearables:
     base-url: ${OPEN_WEARABLES_BASE_URL:}
     api-key: ${OPEN_WEARABLES_API_KEY:}
