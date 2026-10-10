@@ -53,7 +53,7 @@ class HealthInsightServiceTest {
         // A distinctive step count that should only appear in the prompt if the activity
         // summary data actually got serialized into it.
         HealthSnapshotData data = sampleSnapshotData(11223);
-        when(openWearablesClient.fetchLast30Days(anyString(), anyString())).thenReturn(data);
+        when(openWearablesClient.fetchLast30Days(anyString(), anyString(), anyString())).thenReturn(data);
         when(llmClient.generateContent(anyString(), anyString())).thenReturn("commentary");
 
         HealthInsightService service = newService(openWearablesClient, llmClient, mock(HealthInsightRepository.class));
@@ -72,7 +72,7 @@ class HealthInsightServiceTest {
         OpenWearablesClient openWearablesClient = mock(OpenWearablesClient.class);
         LocalLlmClient llmClient = mock(LocalLlmClient.class);
         HealthInsightRepository repository = mock(HealthInsightRepository.class);
-        when(openWearablesClient.fetchLast30Days(anyString(), anyString()))
+        when(openWearablesClient.fetchLast30Days(anyString(), anyString(), anyString()))
                 .thenReturn(sampleSnapshotData(1000));
         when(llmClient.generateContent(anyString(), anyString())).thenReturn("Great progress!");
         when(repository.save(any(HealthInsight.class))).thenAnswer(invocation -> {
@@ -119,7 +119,7 @@ class HealthInsightServiceTest {
     @Test
     void scheduledHealthInsight_swallowsExceptions_soAFailureNeverBreaksTheScheduler() {
         OpenWearablesClient openWearablesClient = mock(OpenWearablesClient.class);
-        when(openWearablesClient.fetchLast30Days(anyString(), anyString()))
+        when(openWearablesClient.fetchLast30Days(anyString(), anyString(), anyString()))
                 .thenThrow(new IllegalStateException("Open Wearables is down"));
         HealthInsightService service =
                 newService(openWearablesClient, mock(LocalLlmClient.class), mock(HealthInsightRepository.class));
@@ -132,7 +132,7 @@ class HealthInsightServiceTest {
         OpenWearablesClient openWearablesClient = mock(OpenWearablesClient.class);
         LocalLlmClient llmClient = mock(LocalLlmClient.class);
         HealthInsightRepository repository = mock(HealthInsightRepository.class);
-        when(openWearablesClient.fetchLast30Days(anyString(), anyString()))
+        when(openWearablesClient.fetchLast30Days(anyString(), anyString(), anyString()))
                 .thenReturn(sampleSnapshotData(1000));
         when(llmClient.generateContent(anyString(), anyString())).thenReturn("commentary");
         when(repository.save(any(HealthInsight.class))).thenAnswer(invocation -> invocation.getArgument(0));
