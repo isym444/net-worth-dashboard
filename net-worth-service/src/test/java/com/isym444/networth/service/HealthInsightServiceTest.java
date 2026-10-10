@@ -2,7 +2,7 @@ package com.isym444.networth.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.isym444.networth.client.GeminiClient;
+import com.isym444.networth.client.LocalLlmClient;
 import com.isym444.networth.client.HealthSnapshotData;
 import com.isym444.networth.client.OpenWearablesClient;
 import com.isym444.networth.dto.HealthInsightResponse;
@@ -30,16 +30,16 @@ class HealthInsightServiceTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
-    void generateCommentary_fetchesWearablesDataAndReturnsGeminiText() {
+    void generateCommentary_fetchesWearablesDataAndReturnsLlmText() {
         OpenWearablesClient openWearablesClient = mock(OpenWearablesClient.class);
-        GeminiClient geminiClient = mock(GeminiClient.class);
+        LocalLlmClient llmClient = mock(LocalLlmClient.class);
         HealthSnapshotData data = sampleSnapshotData(8432);
         when(openWearablesClient.fetchLast30Days("https://wearables.example.com", "user-1", "wearables-key"))
                 .thenReturn(data);
-        when(geminiClient.generateContent(eq("gemini-3.6-flash"), anyString(), eq("gemini-key")))
+        when(llmClient.generateContent(eq("local-model"), anyString()))
                 .thenReturn("You walked a lot this month.");
 
-        HealthInsightService service = newService(openWearablesClient, geminiClient, mock(HealthInsightRepository.class));
+        HealthInsightService service = newService(openWearablesClient, llmClient, mock(HealthInsightRepository.class));
 
         String result = service.generateCommentary();
 
@@ -49,18 +49,18 @@ class HealthInsightServiceTest {
     @Test
     void generateCommentary_includesActivityBodyAndHealthScoreDataInThePrompt() {
         OpenWearablesClient openWearablesClient = mock(OpenWearablesClient.class);
-        GeminiClient geminiClient = mock(GeminiClient.class);
+        LocalLlmClient llmClient = mock(LocalLlmClient.class);
         // A distinctive step count that should only appear in the prompt if the activity
         // summary data actually got serialized into it.
         HealthSnapshotData data = sampleSnapshotData(11223);
-        when(openWearablesClient.fetchLast30Days(anyString(), anyString(), anyString())).thenReturn(data);
-        when(geminiClient.generateContent(anyString(), anyString(), anyString())).thenReturn("commentary");
+        when(openWearablesClient.fetchLast30Days(anyString(), anyString())).thenReturn(data);
+        when(llmClient.generateContent(anyString(), anyString())).thenReturn("commentary");
 
-        HealthInsightService service = newService(openWearablesClient, geminiClient, mock(HealthInsightRepository.class));
+        HealthInsightService service = newService(openWearablesClient, llmClient, mock(HealthInsightRepository.class));
         service.generateCommentary();
 
         var promptCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
-        verify(geminiClient).generateContent(anyString(), promptCaptor.capture(), anyString());
+        verify(llmClient).generateContent(anyString(), promptCaptor.capture());
         String prompt = promptCaptor.getValue();
         assertTrue(prompt.contains("11223"), "prompt should include the activity summary data");
         assertTrue(prompt.contains("72.5"), "prompt should include the body summary data");
@@ -70,18 +70,18 @@ class HealthInsightServiceTest {
     @Test
     void refreshAndPersist_savesANewRowAndReturnsIt() {
         OpenWearablesClient openWearablesClient = mock(OpenWearablesClient.class);
-        GeminiClient geminiClient = mock(GeminiClient.class);
+        LocalLlmClient llmClient = mock(LocalLlmClient.class);
         HealthInsightRepository repository = mock(HealthInsightRepository.class);
-        when(openWearablesClient.fetchLast30Days(anyString(), anyString(), anyString()))
+        when(openWearablesClient.fetchLast30Days(anyString(), anyString()))
                 .thenReturn(sampleSnapshotData(1000));
-        when(geminiClient.generateContent(anyString(), anyString(), anyString())).thenReturn("Great progress!");
+        when(llmClient.generateContent(anyString(), anyString())).thenReturn("Great progress!");
         when(repository.save(any(HealthInsight.class))).thenAnswer(invocation -> {
             HealthInsight saved = invocation.getArgument(0);
             saved.setId(42L);
             return saved;
         });
 
-        HealthInsightService service = newService(openWearablesClient, geminiClient, repository);
+        HealthInsightService service = newService(openWearablesClient, llmClient, repository);
 
         HealthInsightResponse response = service.refreshAndPersist();
 
@@ -94,7 +94,7 @@ class HealthInsightServiceTest {
         HealthInsightRepository repository = mock(HealthInsightRepository.class);
         when(repository.findFirstByOrderByGeneratedAtDesc()).thenReturn(Optional.empty());
         HealthInsightService service =
-                newService(mock(OpenWearablesClient.class), mock(GeminiClient.class), repository);
+                newService(mock(OpenWearablesClient.class), mock(LocalLlmClient.class), repository);
 
         assertTrue(service.getLatest().isEmpty());
     }
@@ -108,7 +108,7 @@ class HealthInsightServiceTest {
         row.setGeneratedAt(generatedAt);
         when(repository.findFirstByOrderByGeneratedAtDesc()).thenReturn(Optional.of(row));
         HealthInsightService service =
-                newService(mock(OpenWearablesClient.class), mock(GeminiClient.class), repository);
+                newService(mock(OpenWearablesClient.class), mock(LocalLlmClient.class), repository);
 
         HealthInsightResponse response = service.getLatest().orElseThrow();
 
@@ -119,10 +119,10 @@ class HealthInsightServiceTest {
     @Test
     void scheduledHealthInsight_swallowsExceptions_soAFailureNeverBreaksTheScheduler() {
         OpenWearablesClient openWearablesClient = mock(OpenWearablesClient.class);
-        when(openWearablesClient.fetchLast30Days(anyString(), anyString(), anyString()))
+        when(openWearablesClient.fetchLast30Days(anyString(), anyString()))
                 .thenThrow(new IllegalStateException("Open Wearables is down"));
         HealthInsightService service =
-                newService(openWearablesClient, mock(GeminiClient.class), mock(HealthInsightRepository.class));
+                newService(openWearablesClient, mock(LocalLlmClient.class), mock(HealthInsightRepository.class));
 
         assertDoesNotThrow(service::scheduledHealthInsight);
     }
@@ -130,28 +130,27 @@ class HealthInsightServiceTest {
     @Test
     void scheduledHealthInsight_onSuccess_persistsARow() {
         OpenWearablesClient openWearablesClient = mock(OpenWearablesClient.class);
-        GeminiClient geminiClient = mock(GeminiClient.class);
+        LocalLlmClient llmClient = mock(LocalLlmClient.class);
         HealthInsightRepository repository = mock(HealthInsightRepository.class);
-        when(openWearablesClient.fetchLast30Days(anyString(), anyString(), anyString()))
+        when(openWearablesClient.fetchLast30Days(anyString(), anyString()))
                 .thenReturn(sampleSnapshotData(1000));
-        when(geminiClient.generateContent(anyString(), anyString(), anyString())).thenReturn("commentary");
+        when(llmClient.generateContent(anyString(), anyString())).thenReturn("commentary");
         when(repository.save(any(HealthInsight.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        HealthInsightService service = newService(openWearablesClient, geminiClient, repository);
+        HealthInsightService service = newService(openWearablesClient, llmClient, repository);
         service.scheduledHealthInsight();
 
         verify(repository).save(any(HealthInsight.class));
     }
 
-    private HealthInsightService newService(OpenWearablesClient openWearablesClient, GeminiClient geminiClient,
+    private HealthInsightService newService(OpenWearablesClient openWearablesClient, LocalLlmClient llmClient,
                                              HealthInsightRepository repository) {
         HealthInsightService service =
-                new HealthInsightService(openWearablesClient, geminiClient, repository, OBJECT_MAPPER);
+                new HealthInsightService(openWearablesClient, llmClient, repository, OBJECT_MAPPER);
         ReflectionTestUtils.setField(service, "wearablesBaseUrl", "https://wearables.example.com");
         ReflectionTestUtils.setField(service, "wearablesApiKey", "wearables-key");
         ReflectionTestUtils.setField(service, "wearablesUserId", "user-1");
-        ReflectionTestUtils.setField(service, "geminiApiKey", "gemini-key");
-        ReflectionTestUtils.setField(service, "geminiModel", "gemini-3.6-flash");
+        ReflectionTestUtils.setField(service, "llmModel", "local-model");
         return service;
     }
 

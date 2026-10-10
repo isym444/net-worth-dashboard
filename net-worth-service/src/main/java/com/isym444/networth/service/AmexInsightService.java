@@ -2,7 +2,7 @@ package com.isym444.networth.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.isym444.networth.client.GeminiClient;
+import com.isym444.networth.client.LocalLlmClient;
 import com.isym444.networth.dto.AmexFollowUpResponse;
 import com.isym444.networth.dto.AmexInsightsResponse;
 import com.isym444.networth.dto.AmexTransaction;
@@ -24,22 +24,19 @@ public class AmexInsightService {
     private static final int LOOKBACK_DAYS = 30;
 
     private final YnabTransactionService ynabTransactionService;
-    private final GeminiClient geminiClient;
+    private final LocalLlmClient llmClient;
     private final NetWorthSnapshotRepository repository;
     private final ObjectMapper objectMapper;
 
-    @Value("${networth.llm.gemini.api-key}")
-    private String apiKey;
-
-    @Value("${networth.llm.gemini.model}")
+    @Value("${networth.llm.model}")
     private String model;
 
     public AmexInsightService(YnabTransactionService ynabTransactionService,
-                               GeminiClient geminiClient,
+                               LocalLlmClient llmClient,
                                NetWorthSnapshotRepository repository,
                                ObjectMapper objectMapper) {
         this.ynabTransactionService = ynabTransactionService;
-        this.geminiClient = geminiClient;
+        this.llmClient = llmClient;
         this.repository = repository;
         this.objectMapper = objectMapper;
     }
@@ -47,13 +44,13 @@ public class AmexInsightService {
     /** Generates fresh commentary without persisting it anywhere. */
     public String generateCommentary() {
         List<AmexTransaction> transactions = ynabTransactionService.getRecentAmexTransactions(LOOKBACK_DAYS);
-        return geminiClient.generateContent(model, buildPrompt(transactions), apiKey);
+        return llmClient.generateContent(model, buildPrompt(transactions));
     }
 
     /** Generates fresh commentary and writes it onto the latest snapshot row for every currency. */
     public AmexInsightsResponse refreshAndPersist() {
         List<AmexTransaction> transactions = ynabTransactionService.getRecentAmexTransactions(LOOKBACK_DAYS);
-        String commentary = geminiClient.generateContent(model, buildPrompt(transactions), apiKey);
+        String commentary = llmClient.generateContent(model, buildPrompt(transactions));
 
         for (String currency : repository.findDistinctCurrencies()) {
             repository.findFirstByCurrencyOrderByTimestampDescIdDesc(currency)
@@ -73,8 +70,8 @@ public class AmexInsightService {
      */
     public AmexFollowUpResponse askFollowUp(String question) {
         List<AmexTransaction> transactions = ynabTransactionService.getRecentAmexTransactions(LOOKBACK_DAYS);
-        String answer = geminiClient.generateContent(
-                model, buildFollowUpPrompt(transactions, latestCommentary(), question), apiKey);
+        String answer = llmClient.generateContent(
+                model, buildFollowUpPrompt(transactions, latestCommentary(), question));
         return new AmexFollowUpResponse(answer);
     }
 

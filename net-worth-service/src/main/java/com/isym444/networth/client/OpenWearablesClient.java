@@ -90,7 +90,7 @@ public class OpenWearablesClient {
                     .body(JsonNode.class);
         } catch (RestClientException e) {
             // The API key travels in a header here, not the URL, so it's safe to log the
-            // exception directly (same reasoning as GeminiClient).
+            // exception directly (same reasoning as LocalLlmClient).
             log.error("Open Wearables request failed", e);
             throw new IllegalStateException("Open Wearables API request failed");
         }

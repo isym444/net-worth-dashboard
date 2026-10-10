@@ -2,7 +2,7 @@ package com.isym444.networth.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.isym444.networth.client.GeminiClient;
+import com.isym444.networth.client.LocalLlmClient;
 import com.isym444.networth.dto.AmexFollowUpResponse;
 import com.isym444.networth.dto.AmexTransaction;
 import com.isym444.networth.model.NetWorthSnapshot;
@@ -27,14 +27,13 @@ import static org.mockito.Mockito.when;
 class AmexInsightServiceTest {
 
     private final YnabTransactionService ynab = mock(YnabTransactionService.class);
-    private final GeminiClient gemini = mock(GeminiClient.class);
+    private final LocalLlmClient gemini = mock(LocalLlmClient.class);
     private final NetWorthSnapshotRepository repository = mock(NetWorthSnapshotRepository.class);
 
     private AmexInsightService service() {
         AmexInsightService service = new AmexInsightService(
                 ynab, gemini, repository, new ObjectMapper().registerModule(new JavaTimeModule()));
-        ReflectionTestUtils.setField(service, "apiKey", "gemini-key");
-        ReflectionTestUtils.setField(service, "model", "gemini-model");
+        ReflectionTestUtils.setField(service, "model", "llm-model");
         return service;
     }
 
@@ -46,17 +45,17 @@ class AmexInsightServiceTest {
     }
 
     @Test
-    void askFollowUp_sendsTheQuestionTheLatestSummaryAndTheTransactionsToGemini() {
+    void askFollowUp_sendsTheQuestionTheLatestSummaryAndTheTransactionsToTheLlm() {
         givenLatestCommentary("Events & Live Entertainment: £198.00");
         when(ynab.getRecentAmexTransactions(30)).thenReturn(List.of(
                 new AmexTransaction(LocalDate.of(2026, 9, 12), "Royal Albert Hall", "Fun", -120.0, "proms", "Amex")));
-        when(gemini.generateContent(eq("gemini-model"), anyString(), eq("gemini-key"))).thenReturn("A Proms concert.");
+        when(gemini.generateContent(eq("llm-model"), anyString())).thenReturn("A Proms concert.");
 
         AmexFollowUpResponse response = service().askFollowUp("What were the events?");
 
         assertEquals("A Proms concert.", response.answer());
         ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
-        verify(gemini).generateContent(eq("gemini-model"), prompt.capture(), eq("gemini-key"));
+        verify(gemini).generateContent(eq("llm-model"), prompt.capture());
         assertTrue(prompt.getValue().contains("What were the events?"));
         assertTrue(prompt.getValue().contains("Events & Live Entertainment: £198.00"));
         assertTrue(prompt.getValue().contains("Royal Albert Hall"));
@@ -67,7 +66,7 @@ class AmexInsightServiceTest {
     void askFollowUp_worksWithoutAStoredSummary() {
         when(repository.findDistinctCurrencies()).thenReturn(List.of());
         when(ynab.getRecentAmexTransactions(30)).thenReturn(List.of());
-        when(gemini.generateContent(anyString(), anyString(), anyString())).thenReturn("Nothing to report.");
+        when(gemini.generateContent(anyString(), anyString())).thenReturn("Nothing to report.");
 
         assertEquals("Nothing to report.", service().askFollowUp("Anything odd?").answer());
     }
@@ -76,7 +75,7 @@ class AmexInsightServiceTest {
     void askFollowUp_doesNotPersistAnything() {
         givenLatestCommentary("summary");
         when(ynab.getRecentAmexTransactions(30)).thenReturn(List.of());
-        when(gemini.generateContent(anyString(), anyString(), anyString())).thenReturn("ok");
+        when(gemini.generateContent(anyString(), anyString())).thenReturn("ok");
 
         service().askFollowUp("q");
 

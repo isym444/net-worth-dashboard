@@ -36,8 +36,9 @@ data point.
 | `SNAPSHOT_ZONE` | no | Timezone for `SNAPSHOT_CRON`. Default `UTC` |
 | `PORT` | no | Listen port. Default `8080`; unset in production (the VPS compose file doesn't set it) |
 | `DASHBOARD_ACCESS_KEY` | no | Shared secret required in the `X-Api-Key` header on every `/api/**` request. Leave unset to disable auth entirely (e.g. local dev). |
-| `GEMINI_API_KEY` | no | Google Gemini API key, used to generate Amex spending insights (`POST /api/v1/amex/insights` and the daily cron snapshot). Get one at [Google AI Studio](https://aistudio.google.com/apikey). Leave unset to disable insight generation (manual refresh returns an error; snapshots still save, just without fresh commentary). |
-| `GEMINI_MODEL` | no | Gemini model id used for insight generation. Default `gemini-3.6-flash` |
+| `LLM_BASE_URL` | no | Base URL of your local OpenAI-compatible LLM server (calls `{base}/v1/chat/completions`), used for Amex/health insights. Default `http://llm.isym.uk:11434/v1`. |
+| `LLM_MODEL` | no | Model name sent to the local server. Default `qwen3.8:27b-q4_K_M` |
+| `LLM_API_KEY` | no | Optional bearer token, only if your local server requires one. |
 | `FRONTEND_ORIGIN` | no | Origin(s) allowed to call the API via CORS (comma-separated). Default `http://localhost:4200` for local `ng serve`. |
 
 Every credential is optional in isolation — leave a pair blank to skip that
@@ -52,7 +53,7 @@ snapshots will fail with "No API keys configured".
 | `GET /api/v1/history?currency=GBP` | Snapshot history for a currency plus projected net worth at a few future ages. `currency` defaults to whichever currency has been logged. See response shape below. |
 | `GET /api/v1/chart?currency=GBP` | PNG line chart (Trading212 / Crypto.com / net worth) rendered from the history. |
 | `GET /api/v1/amex/transactions?days=30` | Recent transactions from any YNAB account with "amex" in its name, newest first. `days` defaults to 30. |
-| `POST /api/v1/amex/insights` | Fetch recent Amex transactions, ask Gemini to analyze them, and overwrite `ai_commentary` on the latest snapshot row for every currency. Returns `{"commentary": "...", "generatedAt": "...", "transactionCount": 12}`. Requires `GEMINI_API_KEY`. |
+| `POST /api/v1/amex/insights` | Fetch recent Amex transactions, ask the local LLM to analyze them, and overwrite `ai_commentary` on the latest snapshot row for every currency. Returns `{"commentary": "...", "generatedAt": "...", "transactionCount": 12}`. Requires a reachable local LLM (`LLM_BASE_URL`). |
 | `GET /actuator/health` | Health check |
 
 `GET /api/v1/history` returns a JSON object, not a bare array:
@@ -95,7 +96,7 @@ export CRYPTO_COM_SECRET=...
 export YNAB_API_TOKEN=...
 export YNAB_CHASE_ACCOUNT_IDS=...
 export YNAB_AMEX_ACCOUNT_IDS=...
-export GEMINI_API_KEY=...
+export LLM_BASE_URL=http://host.docker.internal:11434
 docker compose up --build
 ```
 

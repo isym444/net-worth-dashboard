@@ -2,7 +2,7 @@ package com.isym444.networth.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.isym444.networth.client.GeminiClient;
+import com.isym444.networth.client.LocalLlmClient;
 import com.isym444.networth.client.HealthSnapshotData;
 import com.isym444.networth.client.OpenWearablesClient;
 import com.isym444.networth.dto.HealthInsightResponse;
@@ -23,7 +23,7 @@ import java.util.Optional;
  * {@link AmexInsightService}, this has no manual regenerate-vs-carry-forward split at the
  * snapshot level — the only writer is the daily cron ({@link #scheduledHealthInsight()}) and
  * the dashboard's own "Refresh insights" button ({@link #refreshAndPersist()} via the
- * controller), both of which always call Gemini fresh. The "Take snapshot now" button never
+ * controller), both of which always call the local LLM fresh. The "Take snapshot now" button never
  * touches this service.
  */
 @Service
@@ -32,7 +32,7 @@ public class HealthInsightService {
     private static final Logger log = LoggerFactory.getLogger(HealthInsightService.class);
 
     private final OpenWearablesClient openWearablesClient;
-    private final GeminiClient geminiClient;
+    private final LocalLlmClient llmClient;
     private final HealthInsightRepository repository;
     private final ObjectMapper objectMapper;
 
@@ -45,18 +45,15 @@ public class HealthInsightService {
     @Value("${networth.wearables.user-id}")
     private String wearablesUserId;
 
-    @Value("${networth.llm.gemini.api-key}")
-    private String geminiApiKey;
-
-    @Value("${networth.llm.gemini.model}")
-    private String geminiModel;
+    @Value("${networth.llm.model}")
+    private String llmModel;
 
     public HealthInsightService(OpenWearablesClient openWearablesClient,
-                                 GeminiClient geminiClient,
+                                 LocalLlmClient llmClient,
                                  HealthInsightRepository repository,
                                  ObjectMapper objectMapper) {
         this.openWearablesClient = openWearablesClient;
-        this.geminiClient = geminiClient;
+        this.llmClient = llmClient;
         this.repository = repository;
         this.objectMapper = objectMapper;
     }
@@ -76,7 +73,7 @@ public class HealthInsightService {
     public String generateCommentary() {
         HealthSnapshotData data = openWearablesClient.fetchLast30Days(wearablesBaseUrl, wearablesUserId, wearablesApiKey);
         log.info("Raw open wearables data: {}", data);
-        return geminiClient.generateContent(geminiModel, buildPrompt(data), geminiApiKey);
+        return llmClient.generateContent(llmModel, buildPrompt(data));
     }
 
     /** Generates fresh commentary and persists it as a new row. */
