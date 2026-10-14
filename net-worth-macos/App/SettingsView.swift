@@ -3,7 +3,7 @@ import SwiftUI
 import WidgetKit
 
 /// URL, key and dashboard address, plus "Save & test": validates, fetches once, shows the latest total or the error, and
-/// reloads every widget. The Keychain and App Group are shared with the widget extension.
+/// reloads every widget. The key file and App Group are shared with the widget extension.
 struct SettingsView: View {
     @State private var baseUrl = AppSettings.defaultBaseUrl
     @State private var apiKey = ""

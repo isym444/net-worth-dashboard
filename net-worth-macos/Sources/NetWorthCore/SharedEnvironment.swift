@@ -12,15 +12,16 @@ public struct SharedEnvironment {
     }
 
     public static func make(bundle: Bundle = .main) -> SharedEnvironment {
-        make(appGroup: SharedIds.appGroup(bundle), keychainGroup: SharedIds.keychainGroup(bundle))
+        make(appGroup: SharedIds.appGroup(bundle))
     }
 
-    public static func make(appGroup: String?, keychainGroup: String?) -> SharedEnvironment {
+    public static func make(appGroup: String?) -> SharedEnvironment {
         let container = appGroup.flatMap { FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: $0) }
         let defaults = appGroup.flatMap { UserDefaults(suiteName: $0) } ?? UserDefaults(suiteName: "com.isym444.networth.fallback")!
         let dir = container ?? FileManager.default.temporaryDirectory.appendingPathComponent("networth-fallback")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return SharedEnvironment(
-            settings: SettingsStore(defaults: defaults, secrets: KeychainSecretStore(service: SharedIds.keychainService, accessGroup: keychainGroup)),
+            settings: SettingsStore(defaults: defaults, secrets: FileSecretStore(url: dir.appendingPathComponent("api-key"))),
             cache: HistoryCache(fileURL: dir.appendingPathComponent("cache.json")))
     }
 }

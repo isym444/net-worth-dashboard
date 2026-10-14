@@ -5,8 +5,15 @@ options:
     macOS: "14.0"
 settings:
   base:
-    DEVELOPMENT_TEAM: JKU8L3H56D
-    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: JKU8L3H56D   # Personal Team: supplies the App Group prefix
+    # Signed with the Apple Development certificate but with NO provisioning profile. A free-tier profile expires after 7 days
+    # and the app then refuses to launch; the entitlements used here (sandbox, network, team-prefixed App Group) need no
+    # profile. The signature must carry the team ID, though: ad-hoc signing builds and runs, but macOS then denies the widget
+    # extension access to the App Group container (EPERM), so the widget never leaves "not configured".
+    # The certificate itself expires 2027-07-27; renew it in Xcode (Settings -> Accounts -> Manage Certificates) and re-run install.sh.
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Apple Development"
+    PROVISIONING_PROFILE_SPECIFIER: ""
     SWIFT_VERSION: "5.0"
     ENABLE_HARDENED_RUNTIME: YES
     MARKETING_VERSION: "1.0"
@@ -30,15 +37,12 @@ targets:
         com.apple.security.network.client: true
         com.apple.security.application-groups:
           - $(TeamIdentifierPrefix)com.isym444.networth
-        keychain-access-groups:
-          - $(AppIdentifierPrefix)com.isym444.networth
     info:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: 純資産
         LSApplicationCategoryType: public.app-category.finance
         NWAppGroup: $(TeamIdentifierPrefix)com.isym444.networth
-        NWKeychainGroup: $(AppIdentifierPrefix)com.isym444.networth
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.isym444.networth
@@ -59,14 +63,11 @@ targets:
         com.apple.security.network.client: true
         com.apple.security.application-groups:
           - $(TeamIdentifierPrefix)com.isym444.networth
-        keychain-access-groups:
-          - $(AppIdentifierPrefix)com.isym444.networth
     info:
       path: Widget/Info.plist
       properties:
         CFBundleDisplayName: 純資産
         NWAppGroup: $(TeamIdentifierPrefix)com.isym444.networth
-        NWKeychainGroup: $(AppIdentifierPrefix)com.isym444.networth
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:

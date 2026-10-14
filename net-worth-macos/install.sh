@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Builds the app and widget with your signing identity, installs to /Applications and opens the settings window.
+# Builds the app and widget signed with your Apple Development certificate but no provisioning profile (so there is no
+# 7-day expiry; only the certificate's own 1-year life), installs to /Applications and opens the settings window.
 set -euo pipefail
 cd "$(dirname "$0")"
 xcodegen generate
 xcodebuild -project NetWorth.xcodeproj -scheme NetWorth -configuration Release \
-  -derivedDataPath build -allowProvisioningUpdates build | tail -3
+  -derivedDataPath build build | tail -3
 APP="build/Build/Products/Release/NetWorth.app"
 pkill -x NetWorth 2>/dev/null || true
 rm -rf /Applications/NetWorth.app

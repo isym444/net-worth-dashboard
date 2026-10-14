@@ -1,5 +1,4 @@
 import Foundation
-import Security
 
 /// One JSON file holding the last good API response. Writes are atomic (temp file + rename) so the widget never reads a
 /// half-written cache, and a missing or corrupt file loads as empty instead of throwing.
@@ -20,7 +19,7 @@ public final class HistoryCache {
     }
 }
 
-/// Where the access key lives (the Keychain in the real app; in memory in tests).
+/// Where the access key lives (a file in the App Group container in the real app; in memory in tests).
 public protocol SecretStore {
     func loadKey() -> String
     func saveKey(_ key: String) throws
@@ -75,43 +74,32 @@ public final class SettingsStore {
     }
 }
 
-/// The key in the data-protection Keychain under a shared access group, so the app and the widget extension both read it.
-public final class KeychainSecretStore: SecretStore {
-    private let service: String
-    private let accessGroup: String?
+/// The key in an owner-only (0600) file inside the App Group container, so the app and the widget extension both read it.
+/// The Keychain's shared access group needs a provisioning profile, which a free Apple ID only holds for 7 days; a file
+/// in the group container needs none, so the build keeps working indefinitely. The container directory is itself 0700.
+public final class FileSecretStore: SecretStore {
+    private let url: URL
 
-    public init(service: String, accessGroup: String?) {
-        self.service = service
-        self.accessGroup = accessGroup
-    }
-
-    private func query() -> [String: Any] {
-        var q: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: "api_key",
-            kSecUseDataProtectionKeychain as String: true,
-        ]
-        if let accessGroup { q[kSecAttrAccessGroup as String] = accessGroup }
-        return q
+    public init(url: URL) {
+        self.url = url
     }
 
     public func loadKey() -> String {
-        var q = query()
-        q[kSecReturnData as String] = true
-        q[kSecMatchLimit as String] = kSecMatchLimitOne
-        var out: CFTypeRef?
-        guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let data = out as? Data else { return "" }
+        guard let data = try? Data(contentsOf: url) else { return "" }
         return String(data: data, encoding: .utf8) ?? ""
     }
 
     public func saveKey(_ key: String) throws {
-        SecItemDelete(query() as CFDictionary)
-        if key.isEmpty { return }
-        var q = query()
-        q[kSecValueData as String] = Data(key.utf8)
-        q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-        let status = SecItemAdd(q as CFDictionary, nil)
-        if status != errSecSuccess { throw ApiError.storage("Keychain error \(status)") }
+        let fm = FileManager.default
+        if key.isEmpty {
+            if fm.fileExists(atPath: url.path) { try fm.removeItem(at: url) }
+            return
+        }
+        do {
+            try Data(key.utf8).write(to: url, options: .atomic)
+            try fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        } catch {
+            throw ApiError.storage("Couldn't write the key file: \(error.localizedDescription)")
+        }
     }
 }
