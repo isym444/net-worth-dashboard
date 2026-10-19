@@ -4,3 +4,8 @@
 audit.jsonl
 .DS_Store
 __pycache__/
+
+# Local net-worth history (personal data, never commit)
+outputs/net_worth_history.db
+outputs/net_worth_history.png
+outputs/net_worth_history.csv
